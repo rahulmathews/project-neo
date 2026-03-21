@@ -374,6 +374,19 @@ bun run start
 - Simple configuration
 - Works well with mixed language repos (Dart + TypeScript)
 
+### Why Bun?
+- 3-5x faster than npm/pnpm for installs
+- All-in-one: package manager + runtime + bundler + test runner
+- Native TypeScript support
+- Perfect for performance-critical workers and API services
+
+### Why Biome?
+- 10-25x faster than Prettier + ESLint combined
+- Written in Rust (like Turbo)
+- Single tool for both formatting AND linting
+- Zero config by default
+- Production-ready and actively maintained
+
 ### Message Source Automation Risks
 - **WhatsApp**: Using unofficial libraries (whatsapp-web.js, baileys) violates WhatsApp ToS
   - Account may be banned
@@ -382,12 +395,155 @@ bun run start
 - **Telegram**: Bot API is official and safe, MTProto requires proper authentication
 - **Other platforms**: Review ToS and use official APIs when available
 
+## Development Workflow
+
+### Making Changes
+
+1. **Create a new branch** (for features/fixes)
+   ```bash
+   git checkout -b feat/my-feature
+   # or
+   git checkout -b fix/my-bugfix
+   ```
+
+2. **Make your changes**
+   - Write code following project conventions
+   - Git hooks will automatically format and lint on commit
+
+3. **Commit your changes** (conventional commits enforced)
+   ```bash
+   git add .
+   git commit -m "feat(mobile): add ride listing screen"
+   ```
+
+4. **Create a changeset** (for version bumps)
+   ```bash
+   bun changeset
+   ```
+   - Select packages that changed
+   - Choose version bump type (major/minor/patch)
+   - Describe the changes
+
+5. **Push and create PR**
+   ```bash
+   git push origin feat/my-feature
+   ```
+
+### Conventional Commits
+
+**Format**: `type(scope): subject`
+
+**Types**:
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation changes
+- `style` - Code style changes (formatting, etc.)
+- `refactor` - Code refactoring
+- `perf` - Performance improvements
+- `test` - Adding or updating tests
+- `build` - Build system or dependency changes
+- `ci` - CI/CD changes
+- `chore` - Other changes
+
+**Scopes**: mobile, workers, api, database, shared, deps, release, docker, ci, docs
+
+**Examples**:
+```bash
+feat(mobile): add dark mode toggle
+fix(workers): resolve message parsing error
+docs(api): update GraphQL schema documentation
+build(deps): upgrade Bun to v1.4.0
+```
+
+**Breaking Changes**:
+```bash
+feat(api)!: change authentication method
+
+BREAKING CHANGE: JWT tokens now require refresh token
+```
+
+### Code Formatting & Linting
+
+**Biome** handles all formatting and linting (10-25x faster than Prettier+ESLint).
+
+```bash
+# Format all files
+bun run format
+
+# Check formatting (without fixing)
+bun run format:check
+
+# Lint all files
+bun run lint
+
+# Check and fix everything
+bun run check:fix
+```
+
+**Configuration**: `biome.json`
+- Single quotes
+- 2 space indentation
+- 80 character line width
+- Semicolons required
+- Trailing commas (ES5)
+
+**Git Hooks (automatic)**:
+- **pre-commit**: Runs Biome on staged files automatically
+- **commit-msg**: Validates commit message format
+
+### Versioning & Releases
+
+**Changesets Workflow**:
+
+1. **After making changes**, create a changeset:
+   ```bash
+   bun changeset
+   ```
+
+2. **Answer the prompts**:
+   - Which packages changed?
+   - Major/minor/patch bump?
+   - Describe changes (for changelog)
+
+3. **Commit the changeset file** with your code:
+   ```bash
+   git add .
+   git commit -m "feat(mobile): add new feature"
+   ```
+
+4. **On merge to main**, GitHub Action will:
+   - Create a "Version Packages" PR
+   - Update CHANGELOG.md
+   - Bump package versions
+
+5. **Merge the Version PR** to:
+   - Create GitHub releases
+   - Publish packages (if configured)
+   - Tag commits with version numbers
+
+### CI/CD Pipeline
+
+**On every Push/PR**:
+- ✅ Format check (Biome)
+- ✅ Lint check (Biome)
+- ✅ Build verification (Turborepo)
+- ✅ Turborepo cache optimization
+
+**On merge to main**:
+- 🚀 Auto-create Version PR (Changesets)
+- 📦 Create GitHub releases (when Version PR merged)
+
+**GitHub Actions**:
+- `.github/workflows/ci.yml` - Continuous Integration
+- `.github/workflows/release.yml` - Automated Releases
+
 ## Important Conventions
 
 ### Code Style
+- **JavaScript/TypeScript**: Single quotes, 2 spaces, semicolons (Biome enforced)
 - **Dart**: Follow official Dart style guide
-- **TypeScript**: Use ESLint + Prettier
-- **Commits**: Conventional commits format
+- **JSON**: No trailing commas (Biome enforced)
+- **Commits**: Conventional commits (commitlint enforced)
 
 ### State Management (Flutter)
 - To be decided: Riverpod, Bloc, or Provider
@@ -398,8 +554,10 @@ bun run start
 - Rate limiting on all endpoints
 
 ### Security Considerations
-- Never commit WhatsApp credentials
-- Implement proper authentication
+- Never commit credentials (WhatsApp, API keys, etc.)
+- Use environment variables for secrets
+- `.gitignore` already configured to exclude sensitive files
+- Implement proper authentication and authorization
 - Validate all parsed data
 - Sanitize user inputs
 - Secure local database access
