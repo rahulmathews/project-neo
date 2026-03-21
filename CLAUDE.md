@@ -1,3 +1,4 @@
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -31,9 +32,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Other platforms can be added via workers
   - Runs on local machine initially, self-hosted VPS later
 
-### Monorepo
-- **Tool**: Turborepo
-- **Package Manager**: (to be determined - pnpm recommended for monorepos)
+### Monorepo & Tooling
+- **Monorepo Tool**: Turborepo v1.13.0+
+- **Package Manager**: Bun v1.3.11+ (all-in-one: package manager + runtime + bundler + test runner)
+- **Runtime**: Bun (for workers and GraphQL API services)
+- **Node.js Version**: 24.14.0 LTS (Krypton) - managed via .nvmrc
+- **Deployment**: Docker-based containerization for consistency across environments
 
 ## Architecture
 
@@ -47,7 +51,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
            ▼
 ┌─────────────────────┐
 │      Workers        │
-│  (Node.js Service)  │
+│   (Bun Runtime)     │
 │  - Listen/Poll      │
 │  - Parse messages   │
 │  - Extract rides    │
@@ -247,22 +251,52 @@ Features:
 - Match notifications
 - Ride status updates
 
+## Version Requirements
+
+**Last Updated**: March 2026
+
+### Core Tools & Runtimes
+- **Node.js**: 24.14.0 (LTS Krypton, support until April 2028)
+- **Bun**: 1.3.11+ (package manager + runtime + bundler + test runner)
+- **Turborepo**: 1.13.0+
+
+### Future Package Versions (to be added)
+- **Prettier**: Latest stable
+- **ESLint**: Latest stable
+- **Husky**: Latest stable
+- **lint-staged**: Latest stable
+- **Commitlint**: Latest stable
+- **Changesets**: Latest stable
+
+### Flutter (Mobile)
+- **Flutter SDK**: Latest stable channel
+- **Dart**: Comes with Flutter SDK
+
+### Database & Backend
+- **Supabase**: Latest stable (self-hosted)
+- **PostgreSQL**: Version included with Supabase
+
+### Version Management
+- Use `.nvmrc` for Node.js version consistency across environments
+- Use `package.json` engines field to enforce version requirements
+- Docker images will use specific versions (documented in Dockerfiles)
+
 ## Development Commands
 
-### Monorepo (once initialized)
+### Monorepo
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Build all packages
-turbo build
+bun run build
 
 # Run all apps in dev mode
-turbo dev
+bun run dev
 
 # Run specific app
-turbo dev --filter=mobile
-turbo dev --filter=workers
+bun run build --filter=mobile
+bun run dev --filter=workers
 ```
 
 ### Supabase Local
@@ -305,13 +339,13 @@ flutter build ios
 cd apps/workers
 
 # Install dependencies
-pnpm install
+bun install
 
 # Run in development
-pnpm dev
+bun run dev
 
 # Run in production
-pnpm start
+bun run start
 ```
 
 ## Critical Architectural Decisions

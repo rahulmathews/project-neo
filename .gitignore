@@ -76,6 +76,9 @@ supabase/.env
 # Turborepo
 .turbo/
 
+# Bun
+.bun/
+
 # Source credentials (NEVER COMMIT)
 **/credentials.json
 **/auth.json
