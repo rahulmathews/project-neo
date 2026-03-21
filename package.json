@@ -16,14 +16,25 @@
     "check:fix": "biome check --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo build && changeset publish"
+    "release": "turbo build && changeset publish",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "turbo": "^1.13.0"
   },
   "engines": {
     "node": ">=24.0.0",
     "bun": ">=1.1.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc}": [
+      "biome check --write --no-errors-on-unmatched"
+    ],
+    "*.{md,yml,yaml}": [
+      "biome format --write --no-errors-on-unmatched"
+    ]
   }
 }
