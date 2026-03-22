@@ -1,0 +1,70 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Report suspicious constructs
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Advanced Go linter
+    - unused        # Check for unused code
+    - gofmt         # Check code formatting
+    - goimports     # Check import formatting
+    - misspell      # Find commonly misspelled words
+    - revive        # Fast, configurable, extensible linter
+    - typecheck     # Type-check Go code
+    - gocritic      # Opinionated Go linter
+    - gosec         # Security-focused linter
+    - bodyclose     # Check HTTP response bodies are closed
+    - dupl          # Check for duplicate code
+    - errorlint     # Find misuses of error wrapping
+    - exhaustive    # Check exhaustiveness of enum switches
+    - exportloopref # Check for pointers to loop variables
+    - funlen        # Detect long functions
+    - gochecknoglobals # Check for global variables
+    - gocognit      # Compute cognitive complexity
+    - goconst       # Find repeated strings that could be constants
+    - gocyclo       # Compute cyclomatic complexity
+    - godot         # Check comments end with period
+    - nestif        # Report deeply nested if statements
+    - prealloc      # Find slice declarations that could be preallocated
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Report unused function parameters
+    - whitespace    # Detect leading/trailing whitespace
+
+linters-settings:
+  errcheck:
+    check-blank: true
+    check-type-assertions: true
+
+  govet:
+    check-shadowing: true
+
+  gofmt:
+    simplify: true
+
+  gocyclo:
+    min-complexity: 15
+
+  funlen:
+    lines: 80
+    statements: 50
+
+  godot:
+    scope: all
+
+  revive:
+    confidence: 0.8
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

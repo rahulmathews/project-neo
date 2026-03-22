@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: true
+          cache: false  # Disable until we have go.sum files
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -46,6 +46,11 @@ jobs:
           if [ -f go.work ]; then
             go work sync
           fi
+
+      - name: Install Go tools
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Check formatting
         run: bun run format:check

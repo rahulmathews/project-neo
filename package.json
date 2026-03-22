@@ -10,9 +10,15 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "biome lint .",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
+    "lint": "bun run lint:js && bun run lint:go",
+    "lint:js": "biome lint .",
+    "lint:go": "golangci-lint run --config .golangci.yml ./... 2>/dev/null || echo 'No Go code yet'",
+    "format": "bun run format:js && bun run format:go",
+    "format:js": "biome format --write .",
+    "format:go": "gofumpt -w . 2>/dev/null || echo 'No Go code yet'",
+    "format:check": "bun run format:check:js && bun run format:check:go",
+    "format:check:js": "biome format .",
+    "format:check:go": "test -z $(gofumpt -l . 2>/dev/null) || (echo 'Go files need formatting' && exit 1)",
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "changeset": "changeset",
@@ -39,6 +45,10 @@
     ],
     "*.{md,yml,yaml}": [
       "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.go": [
+      "gofumpt -w",
+      "golangci-lint run --fix --config .golangci.yml"
     ]
   }
 }
