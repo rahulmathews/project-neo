@@ -24,7 +24,7 @@ export default {
       [
         'mobile', // Flutter mobile app
         'workers', // Workers service
-        'api', // GraphQL API
+        'graphql-api', // GraphQL API
         'database', // Database/Supabase
         'shared', // Shared packages
         'deps', // Dependencies
