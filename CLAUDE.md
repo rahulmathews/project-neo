@@ -515,6 +515,12 @@ docs(api): update GraphQL schema documentation
 build(deps): upgrade Bun to v1.4.0
 ```
 
+**Important Notes**:
+- Commit messages should be concise and descriptive
+- No attribution footers (e.g., no "Generated with Claude Code" or "Co-Authored-By")
+- Use imperative mood ("add" not "added", "fix" not "fixed")
+- Keep commits small and focused on a single change
+
 **Breaking Changes**:
 ```bash
 feat(api)!: change authentication method
@@ -524,17 +530,14 @@ BREAKING CHANGE: JWT tokens now require refresh token
 
 ### Code Formatting & Linting
 
-**Biome** handles all formatting and linting (10-25x faster than Prettier+ESLint).
+**JavaScript/TypeScript** - Biome (10-25x faster than Prettier+ESLint):
 
 ```bash
-# Format all files
-bun run format
+# Format JS/TS files
+bun run format:js
 
-# Check formatting (without fixing)
-bun run format:check
-
-# Lint all files
-bun run lint
+# Lint JS/TS files
+bun run lint:js
 
 # Check and fix everything
 bun run check:fix
@@ -547,9 +550,37 @@ bun run check:fix
 - Semicolons required
 - Trailing commas (ES5)
 
+**Golang** - gofumpt + golangci-lint:
+
+```bash
+# Format Go code (stricter than gofmt)
+bun run format:go
+# or: make format-go
+
+# Lint Go code (30+ linters enabled)
+bun run lint:go
+# or: make lint-go
+
+# Test Go code with coverage
+make test-go
+
+# Install Go tools (golangci-lint, gofumpt, air)
+make install-tools
+```
+
+**Configuration**: `.golangci.yml`
+- 30+ linters enabled (errcheck, gosimple, govet, staticcheck, gosec, etc.)
+- Type checking, security checks, complexity analysis
+- Enforces Go best practices
+
+**Version Management**: `.tool-versions` (asdf)
+- golang 1.24.4
+- nodejs 24.14.0
+- bun 1.3.11
+
 **Git Hooks (automatic)**:
-- **pre-commit**: Runs Biome on staged files automatically
-- **commit-msg**: Validates commit message format
+- **pre-commit**: Runs Biome on JS/TS and gofumpt on Go files automatically
+- **commit-msg**: Validates commit message format (conventional commits)
 
 ### Versioning & Releases
 
@@ -583,15 +614,21 @@ bun run check:fix
 
 ### CI/CD Pipeline
 
-**On every Push/PR**:
-- ✅ Format check (Biome)
-- ✅ Lint check (Biome)
+**On every Push/PR** (`.github/workflows/ci.yml`):
+- ✅ Format check (Biome for JS/TS, gofumpt for Go)
+- ✅ Lint check (Biome for JS/TS, golangci-lint for Go)
 - ✅ Build verification (Turborepo)
+- ✅ Go tests (when modules exist)
 - ✅ Turborepo cache optimization
 
-**On merge to main**:
+**On merge to main** (`.github/workflows/release.yml`):
 - 🚀 Auto-create Version PR (Changesets)
 - 📦 Create GitHub releases (when Version PR merged)
+- ⚠️ Note: Release workflow will work once packages are created
+
+**Current Status**:
+- ✅ CI workflow: Passing
+- ⚠️ Release workflow: Expected to fail until packages exist
 
 **GitHub Actions**:
 - `.github/workflows/ci.yml` - Continuous Integration
