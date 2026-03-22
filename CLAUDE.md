@@ -24,20 +24,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - To be determined (Flutter Web or separate React/Next.js stack)
 
 ### Backend Services
+- **Language**: Golang 1.24+ (high-performance, concurrent, compiled binaries)
 - **Database**: Supabase (local instance) - PostgreSQL + PostgREST + Realtime
-- **API Protocol**: GraphQL
-- **Message Source Automation**: Multi-platform support (WhatsApp, Telegram, etc.)
-  - WhatsApp: whatsapp-web.js or baileys (⚠️ violates WhatsApp ToS, use at own risk)
-  - Telegram: Telegram Bot API or MTProto
-  - Other platforms can be added via workers
+- **API Protocol**: GraphQL (using gqlgen - type-safe, code-first)
+- **Message Source Automation**: Multi-platform support
+  - WhatsApp: whatsmeow (Go library) or via Node.js worker if needed
+  - Telegram: go-telegram-bot-api (official Go support)
+  - Other platforms can be added as separate workers
   - Runs on local machine initially, self-hosted VPS later
 
 ### Monorepo & Tooling
-- **Monorepo Tool**: Turborepo v1.13.0+
-- **Package Manager**: Bun v1.3.11+ (all-in-one: package manager + runtime + bundler + test runner)
-- **Runtime**: Bun (for workers and GraphQL API services)
-- **Node.js Version**: 24.14.0 LTS (Krypton) - managed via .nvmrc
-- **Deployment**: Docker-based containerization for consistency across environments
+- **Monorepo Tool**: Turborepo v1.13.0+ (polyglot - supports Go + JS/TS)
+- **Package Manager**: Bun v1.3.11+ (for tooling, scripts, and future web app)
+- **Backend Runtime**: Golang (compiled binaries - 2-3x faster than Node.js)
+- **Go Version**: 1.24+ - managed via go.work
+- **Node.js Version**: 24.14.0 LTS (Krypton) - for tooling only
+- **Deployment**: Docker-based containerization with multi-stage builds
 
 ## Architecture
 
@@ -51,16 +53,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
            ▼
 ┌─────────────────────┐
 │      Workers        │
-│   (Bun Runtime)     │
-│  - Listen/Poll      │
+│    (Go Binary)      │
+│  - Goroutines       │
 │  - Parse messages   │
 │  - Extract rides    │
+│  - NLP/Regex        │
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
 │  GraphQL API        │
-│  (Express/Fastify)  │
+│    (Go - gqlgen)    │
+│  - Type-safe        │
+│  - Subscriptions    │
 └──────────┬──────────┘
            │
            ▼
@@ -83,16 +88,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 project-neo/
 ├── apps/
-│   ├── mobile/              # Flutter mobile app
-│   ├── web/                 # Web app (future)
-│   └── workers/             # WhatsApp automation service (Node.js)
+│   ├── mobile/              # Flutter mobile app (Dart)
+│   ├── workers/             # Workers service (Go binary)
+│   │   ├── go.mod
+│   │   ├── main.go
+│   │   └── package.json     # For Turborepo build scripts
+│   └── web/                 # Web app (future, Bun/React)
 ├── packages/
-│   ├── graphql-api/         # GraphQL server
+│   ├── graphql-api/         # GraphQL server (Go binary)
+│   │   ├── go.mod
+│   │   ├── main.go
+│   │   └── package.json     # For Turborepo build scripts
+│   ├── shared-go/           # Shared Go code
 │   ├── database/            # Supabase schemas, migrations
-│   ├── shared-types/        # Shared TypeScript types
-│   └── dart-models/         # Shared Dart models (if needed)
+│   └── shared-types/        # TypeScript types (for web app)
+├── scripts/                 # Utility scripts (Bun)
 ├── supabase/                # Supabase local configuration
+├── go.work                  # Go workspace file
 ├── turbo.json              # Turborepo configuration
+├── package.json            # Root workspace (Bun)
+├── bun.lock                # Bun lockfile
 └── CLAUDE.md               # This file
 ```
 
@@ -285,18 +300,21 @@ Features:
 
 ### Monorepo
 ```bash
-# Install dependencies
+# Install JS/TS dependencies (tooling)
 bun install
 
-# Build all packages
+# Install Go dependencies
+go work sync
+
+# Build all packages (Go + Flutter + any JS/TS)
 bun run build
 
 # Run all apps in dev mode
 bun run dev
 
 # Run specific app
-bun run build --filter=mobile
-bun run dev --filter=workers
+bun run build --filter=workers
+bun run dev --filter=graphql-api
 ```
 
 ### Supabase Local
@@ -334,18 +352,48 @@ flutter build apk
 flutter build ios
 ```
 
-### Workers Service
+### Workers Service (Go)
 ```bash
 cd apps/workers
 
 # Install dependencies
-bun install
+go mod download
+
+# Run in development (with live reload using Air)
+air
+# or without Air:
+go run .
+
+# Build binary
+go build -o bin/workers .
+
+# Run tests
+go test ./...
+
+# Run specific test
+go test -v -run TestMessageParser
+```
+
+### GraphQL API (Go)
+```bash
+cd packages/graphql-api
+
+# Install dependencies
+go mod download
+
+# Generate GraphQL code from schema (gqlgen)
+go run github.com/99designs/gqlgen generate
 
 # Run in development
-bun run dev
+air
+# or:
+go run .
 
-# Run in production
-bun run start
+# Build binary
+go build -o bin/graphql-api .
+
+# Run tests
+go test ./...
 ```
 
 ## Critical Architectural Decisions
@@ -372,13 +420,25 @@ bun run start
 ### Why Turborepo?
 - Fast incremental builds with caching
 - Simple configuration
-- Works well with mixed language repos (Dart + TypeScript)
+- Polyglot support (Go + Dart + TypeScript in one monorepo)
+- Perfect for mixed-language projects
 
-### Why Bun?
+### Why Golang for Backend?
+- **Performance**: 2-3x faster than Node.js/Bun
+- **Concurrency**: Goroutines perfect for handling thousands of concurrent message streams
+- **Memory efficiency**: 50-70% lower memory usage than Node.js
+- **Compiled binaries**: Single executable, no runtime dependencies
+- **Type safety**: Strong static typing catches errors at compile time
+- **Production-proven**: Used by Google, Uber, Dropbox for similar systems
+- **Docker-friendly**: Tiny binaries (5-20MB vs 50-100MB+ for Node.js)
+- **GraphQL migration success**: SafetyCulture saw massive performance gains moving from Node.js to Go
+
+### Why Bun (for Tooling)?
 - 3-5x faster than npm/pnpm for installs
 - All-in-one: package manager + runtime + bundler + test runner
-- Native TypeScript support
-- Perfect for performance-critical workers and API services
+- Perfect for monorepo tooling and scripts
+- Future web app can use Bun runtime
+- Works alongside Go seamlessly via Turborepo
 
 ### Why Biome?
 - 10-25x faster than Prettier + ESLint combined

@@ -79,6 +79,19 @@ supabase/.env
 # Bun
 .bun/
 
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work.sum
+vendor/
+bin/
+dist/
+
 # Source credentials (NEVER COMMIT)
 **/credentials.json
 **/auth.json
