@@ -13,6 +13,114 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Local-first architecture**: Avoiding cloud providers (AWS, etc.) due to IP blocking concerns
 - **Self-hosted infrastructure**: Running on local machines initially, with VPS option for later
 
+## Current Status & Next Steps
+
+### ✅ Completed (Phase 1: Foundation)
+
+**Repository Setup:**
+- Git initialized with conventional commits (commitlint)
+- Husky hooks for pre-commit and commit-msg validation
+- GitHub repository: https://github.com/rahulmathews/project-neo
+
+**Tooling Configuration:**
+- Turborepo monorepo setup (polyglot: Go + JS/TS + Dart)
+- Bun 1.3.11 for package management and tooling
+- Biome for JS/TS linting/formatting (10-25x faster than Prettier+ESLint)
+- golangci-lint + gofumpt for Go linting/formatting (30+ linters)
+- Changesets for independent versioning
+- lint-staged for automatic formatting on commit
+
+**Version Management:**
+- `.tool-versions` (asdf): golang 1.24.4, nodejs 24.14.0, bun 1.3.11
+- `.nvmrc`: Node.js 24.14.0
+- `go.work`: Go 1.24.4
+
+**CI/CD Pipelines:**
+- ✅ CI workflow passing (format, lint, build checks for JS/TS and Go)
+- GitHub Actions configured with exact version pinning
+- Release workflow configured (triggers only on changesets)
+
+**Database Schema Designed:**
+- 8 tables: users, groups, group_sources, location_contexts, messages, rides, matches, locations
+- See full schema in "Database Schema" section below
+
+### ⚠️ Known Issues / Pending Manual Steps
+
+1. **Local Go version mismatch:**
+   - Required: Go 1.24.4 (per `.tool-versions`)
+   - Currently installed: Go 1.25.3
+   - Installer downloaded to: `/tmp/go1.24.4.windows-amd64.msi`
+   - **Action required:** Run installer with admin privileges
+   ```powershell
+   msiexec /i C:\tmp\go1.24.4.windows-amd64.msi /passive
+   ```
+
+2. **Node.js activation:**
+   - Node.js 24.14.0 installed via nvm but needs activation in new shells
+   - **Action required:** Run `nvm use 24.14.0` in each new terminal
+
+### 🎯 Next Steps (Phase 2: Docker & Core Services)
+
+**Immediate priorities:**
+
+1. **Docker Configuration:**
+   - Create multi-stage Dockerfile for Go services
+   - Create docker-compose.yml for local development
+   - Include Supabase local instance in docker-compose
+   - Add health checks and proper networking
+
+2. **Initialize Go Modules:**
+   - Create `apps/workers` Go module (message parsing workers)
+   - Create `packages/graphql-api` Go module (GraphQL server)
+   - Uncomment modules in `go.work`
+   - Enable Go cache in CI workflows once go.sum exists
+
+3. **Supabase Local Setup:**
+   - Initialize Supabase project (`supabase init`)
+   - Apply database schema migrations
+   - Configure local auth and realtime
+
+4. **GraphQL API Scaffold:**
+   - Initialize gqlgen in `packages/graphql-api`
+   - Define GraphQL schema based on database design
+   - Generate resolvers and models
+
+5. **Workers Service Scaffold:**
+   - Create worker framework in `apps/workers`
+   - Set up message queue architecture
+   - Prepare for WhatsApp/Telegram integration
+
+**Reference TODO.md for full 7-phase roadmap.**
+
+### 🔍 Quick Health Check Commands
+
+Verify your environment is correctly configured:
+
+```bash
+# Check versions
+node --version          # Should be v24.14.0
+go version             # Should be go1.24.4
+bun --version          # Should be 1.3.11
+
+# Run all checks
+bun run format:check   # Check formatting (JS/TS + Go)
+bun run lint           # Lint all code (JS/TS + Go)
+bun run build          # Build all packages (will skip if empty)
+
+# Git hooks test
+git commit --allow-empty -m "test: verify commitlint works"  # Should pass
+
+# CI status
+git push               # Should trigger CI workflow (should pass)
+```
+
+### 📚 Important Notes for Future Sessions
+
+- **Commit scope naming:** Use `graphql-api` (not `api`) per commitlint config
+- **No commit attribution footers:** Don't add "Generated with Claude Code" or "Co-Authored-By"
+- **Small, atomic commits:** Each commit should be focused on a single change
+- **Monorepo structure:** `apps/*` for deployable services, `packages/*` for shared libraries
+
 ## Tech Stack
 
 ### Mobile (Priority)
