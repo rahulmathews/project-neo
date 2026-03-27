@@ -73,6 +73,9 @@ build/
 .temp
 supabase/.env
 
+# Local design docs (superpowers specs)
+docs/superpowers/
+
 # Turborepo
 .turbo/
 
