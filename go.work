@@ -1,7 +1,6 @@
 go 1.24.4
 
-// Modules will be added here as they are created
-// use (
-// 	./apps/workers
-// 	./packages/graphql-api
-// )
+use (
+	./apps/workers
+	./packages/graphql-api
+)

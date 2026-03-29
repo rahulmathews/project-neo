@@ -1,0 +1,9 @@
+{
+  "name": "@project-neo/workers",
+  "private": true,
+  "scripts": {
+    "build": "go build ./...",
+    "dev": "go run .",
+    "lint": "golangci-lint run --config ../../.golangci.yml ./..."
+  }
+}
