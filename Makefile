@@ -15,15 +15,15 @@ install-tools: ## Install Go development tools
 
 lint-go: ## Lint Go code
 	@echo "Linting Go code..."
-	@~/go/bin/golangci-lint run --config .golangci.yml ./...
+	@golangci-lint run --config .golangci.yml ./...
 
 format-go: ## Format Go code
 	@echo "Formatting Go code..."
-	@~/go/bin/gofumpt -w .
+	@gofumpt -w .
 
 format-check-go: ## Check Go code formatting
 	@echo "Checking Go code formatting..."
-	@test -z $$(~/go/bin/gofumpt -l .) || (echo "Go files need formatting:" && ~/go/bin/gofumpt -l . && exit 1)
+	@test -z "$$(gofumpt -l .)" || (echo "Go files need formatting:" && gofumpt -l . && exit 1)
 
 test-go: ## Run Go tests
 	@echo "Running Go tests..."
