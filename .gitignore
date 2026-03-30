@@ -35,7 +35,6 @@ out/
 .packages
 .pub-cache/
 .pub/
-build/
 *.iml
 
 # iOS
@@ -100,3 +99,5 @@ dist/
 **/auth.json
 **/.auth/
 **/session.data.json
+
+.claude/
