@@ -1,4 +1,4 @@
-.PHONY: help install-tools lint-go format-go test-go
+.PHONY: help install-tools lint-go format-go format-check-go docker-up docker-down docker-build docker-logs supabase-start supabase-stop dev-up dev-down
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -25,11 +25,28 @@ format-check-go: ## Check Go code formatting
 	@echo "Checking Go code formatting..."
 	@test -z "$$(gofumpt -l .)" || (echo "Go files need formatting:" && gofumpt -l . && exit 1)
 
-test-go: ## Run Go tests
-	@echo "Running Go tests..."
-	@go test -v -race -coverprofile=coverage.out ./...
-	@go tool cover -func=coverage.out
+docker-up: ## Start all app services
+	@docker compose up -d
 
-test-go-coverage: test-go ## Run Go tests with coverage report
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
+docker-down: ## Stop all app services
+	@docker compose down
+
+docker-build: ## Build all Docker images
+	@docker compose build
+
+docker-logs: ## Tail logs from all services
+	@docker compose logs -f
+
+supabase-start: ## Start Supabase local instance
+	@supabase start
+
+supabase-stop: ## Stop Supabase local instance
+	@supabase stop
+
+dev-up: ## Start everything (Supabase + app services)
+	@supabase start
+	@docker compose up -d
+
+dev-down: ## Stop everything (app services + Supabase)
+	@docker compose down
+	@supabase stop
