@@ -30,6 +30,22 @@
 
 ## Phase 2: Containerization & Docker Setup
 
+### ✅ Completed
+- [x] Create root docker-compose.yml for local development
+  - [x] Workers service
+  - [x] GraphQL API service
+- [x] Create .env.example
+- [x] Create individual Dockerfiles for each service
+  - [x] `apps/workers/Dockerfile`
+  - [x] `packages/graphql-api/Dockerfile`
+- [x] Add Docker-related scripts to Makefile
+  - [x] `docker-up` - Start all services
+  - [x] `docker-down` - Stop all services
+  - [x] `docker-build` - Build all images
+  - [x] `docker-logs` - View logs
+  - [x] `dev-up` / `dev-down` - Start/stop everything
+- [x] Set up environment variable templates (.env.example)
+
 ### 📋 Docker Infrastructure
 - [ ] Create root Dockerfile (multi-stage build)
 - [ ] Create docker-compose.yml for local development
@@ -65,6 +81,9 @@
 ## Phase 3: Core Application Structure
 
 ### 📋 Supabase Setup
+
+> **Note:** Supabase CLI not yet installed. Install via `scoop install supabase` or `winget install Supabase.CLI`, then run `supabase init` from repo root.
+
 - [ ] Initialize Supabase locally (`supabase init`)
 - [ ] Design database schema (from CLAUDE.md)
   - [ ] users table
@@ -237,8 +256,8 @@
 **Total Roadmap Items**: 100+
 
 **Next Immediate Tasks**:
-1. Complete commitlint setup
-2. 
-2. Add Changesets
-3. Create GitHub Actions workflows
-4. Begin Docker containerization (Phase 2)
+1. Install Supabase CLI and run `supabase init`
+2. Design and apply database schema migrations (8 tables)
+3. Configure Supabase Row Level Security (RLS) policies
+4. Set up GraphQL resolvers for ride CRUD operations
+5. Begin Flutter mobile app scaffold

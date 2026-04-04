@@ -66,8 +66,6 @@ jobs:
             echo "Skipping build: no packages exist yet"
           fi
 
-      - name: Test Go packages
-        run: echo "Skipping Go tests - no test suite written yet"
 
       - name: Cache Turborepo
         uses: actions/cache@v4

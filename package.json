@@ -48,8 +48,7 @@
       "biome format --write --no-errors-on-unmatched"
     ],
     "*.go": [
-      "gofumpt -w",
-      "golangci-lint run --fix --config .golangci.yml"
+      "gofumpt -w"
     ]
   }
 }

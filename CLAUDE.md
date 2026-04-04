@@ -59,36 +59,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Node.js 24.14.0 installed via nvm but needs activation in new shells
    - **Action required:** Run `nvm use 24.14.0` in each new terminal
 
-### 🎯 Next Steps (Phase 2: Docker & Core Services)
+3. **Supabase CLI not installed:**
+   - Required for `supabase start` / `supabase init`
+   - **Action required:** Install via `scoop install supabase` or `winget install Supabase.CLI`
+   - After install, run `supabase init` from the repo root to create `supabase/config.toml`
+
+### ✅ Completed (Phase 2: Docker & Core Services)
 
 **Immediate priorities:**
 
 1. **Docker Configuration:**
-   - Create multi-stage Dockerfile for Go services
-   - Create docker-compose.yml for local development
-   - Include Supabase local instance in docker-compose
-   - Add health checks and proper networking
+   - [x] Create multi-stage Dockerfile for Go services
+   - [x] Create docker-compose.yml for local development
+   - [x] Add health checks and proper networking
+   - [x] Create .env.example
 
 2. **Initialize Go Modules:**
-   - Create `apps/workers` Go module (message parsing workers)
-   - Create `packages/graphql-api` Go module (GraphQL server)
-   - Uncomment modules in `go.work`
-   - Enable Go cache in CI workflows once go.sum exists
+   - [x] Create `apps/workers` Go module (message parsing workers)
+   - [x] Create `packages/graphql-api` Go module (GraphQL server)
+   - [x] Uncomment modules in `go.work`
+   - [x] Enable Go cache in CI workflows once go.sum exists
 
 3. **Supabase Local Setup:**
-   - Initialize Supabase project (`supabase init`)
-   - Apply database schema migrations
-   - Configure local auth and realtime
+   - ⚠️ PENDING — Supabase CLI not yet installed. `supabase init` requires manual install of Supabase CLI first.
 
 4. **GraphQL API Scaffold:**
-   - Initialize gqlgen in `packages/graphql-api`
-   - Define GraphQL schema based on database design
-   - Generate resolvers and models
+   - [x] Initialize gqlgen in `packages/graphql-api`
+   - [x] Define GraphQL schema based on database design
+   - [x] Health query implemented and verified
 
 5. **Workers Service Scaffold:**
-   - Create worker framework in `apps/workers`
-   - Set up message queue architecture
-   - Prepare for WhatsApp/Telegram integration
+   - [x] Create worker framework in `apps/workers`
+   - [x] Health endpoint implemented and verified
 
 **Reference TODO.md for full 7-phase roadmap.**
 
@@ -102,16 +104,29 @@ node --version          # Should be v24.14.0
 go version             # Should be go1.24.4
 bun --version          # Should be 1.3.11
 
-# Run all checks
+# Start the full stack
+cp .env.example .env   # First time only
+supabase start         # Start Supabase (first time: ~2 min)
+docker compose up -d --build  # Start app services
+
+# Verify services
+curl http://localhost:8081/health    # workers → {"status":"ok","service":"workers"}
+curl http://localhost:8080/health    # graphql-api → {"status":"ok","service":"graphql-api"}
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ health }"}'       # → {"data":{"health":"ok"}}
+
+# Supabase Studio
+open http://localhost:54323
+
+# Stop everything
+docker compose down
+supabase stop
+
+# Run all checks (CI parity)
 bun run format:check   # Check formatting (JS/TS + Go)
 bun run lint           # Lint all code (JS/TS + Go)
-bun run build          # Build all packages (will skip if empty)
-
-# Git hooks test
-git commit --allow-empty -m "test: verify commitlint works"  # Should pass
-
-# CI status
-git push               # Should trigger CI workflow (should pass)
+bun run build          # Build all packages
 ```
 
 ### 📚 Important Notes for Future Sessions
