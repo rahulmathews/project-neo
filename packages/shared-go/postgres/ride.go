@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 	"project-neo/shared/model"
 	"project-neo/shared/repository"
+
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type rideRepository struct {

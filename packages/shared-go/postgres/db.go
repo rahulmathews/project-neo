@@ -4,16 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 
+	"project-neo/shared/model"
+
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
-	"project-neo/shared/model"
 )
 
 // NewDB creates and returns a configured Bun DB instance.
 func NewDB(dsn string) (*bun.DB, error) {
-	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	db := bun.NewDB(sqldb, pgdialect.New())
+	db := bun.NewDB(
+		sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn))),
+		pgdialect.New(),
+	)
 
 	// Register models for Bun's query builder
 	db.RegisterModel(
@@ -26,7 +29,7 @@ func NewDB(dsn string) (*bun.DB, error) {
 	)
 
 	if err := db.Ping(); err != nil {
-		_ = sqldb.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("postgres ping: %w", err)
 	}
 
