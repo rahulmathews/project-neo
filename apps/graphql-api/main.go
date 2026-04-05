@@ -8,17 +8,24 @@ import (
 	"os"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
 	ipostgres "project-neo/graphql-api/internal/postgres"
 	"project-neo/shared/postgres"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
+}
+
+func run() error {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -34,7 +41,7 @@ func main() {
 
 	db, err := postgres.NewDB(dsn)
 	if err != nil {
-		log.Fatalf("connect to database: %v", err)
+		return fmt.Errorf("connect to database: %w", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -47,7 +54,6 @@ func main() {
 	rideRepo := postgres.NewRideRepository(db)
 	matchRepo := postgres.NewMatchRepository(db)
 
-	// Start LISTEN/NOTIFY listener in background — receives repo interfaces, not concrete types
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go ipostgres.StartListener(ctx, dsn, rideRepo, matchRepo, broker)
@@ -61,27 +67,33 @@ func main() {
 		Broker:    broker,
 	}
 
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{
+	gqlSrv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
-	srv.AddTransport(transport.POST{})
-	srv.AddTransport(transport.MultipartForm{})
-	srv.AddTransport(transport.Websocket{
+	gqlSrv.AddTransport(transport.Options{})
+	gqlSrv.AddTransport(transport.GET{})
+	gqlSrv.AddTransport(transport.POST{})
+	gqlSrv.AddTransport(transport.MultipartForm{})
+	gqlSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
 	})
 
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
-	mux.Handle("/query", auth.Middleware(jwtSecret)(srv))
+	mux.Handle("/query", auth.Middleware(jwtSecret)(gqlSrv))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
 	})
 
-	log.Printf("graphql-api listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		log.Fatalf("server error: %v", err)
+	httpSrv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
+
+	log.Printf("graphql-api listening on :%s", port)
+	return httpSrv.ListenAndServe()
 }

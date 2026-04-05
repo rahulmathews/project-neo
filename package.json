@@ -41,14 +41,21 @@
     "bun": ">=1.1.0"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc}": [
+    "*.{js,jsx,ts,tsx}": [
       "biome check --write --no-errors-on-unmatched"
     ],
-    "*.{md,yml,yaml}": [
+    "*.{json,jsonc}": [
+      "biome format --write --no-errors-on-unmatched"
+    ],
+    "*.{yml,yaml,md}": [
       "biome format --write --no-errors-on-unmatched"
     ],
     "*.go": [
+      "goimports -w",
       "gofumpt -w"
+    ],
+    "*.dart": [
+      "dart format"
     ]
   }
 }

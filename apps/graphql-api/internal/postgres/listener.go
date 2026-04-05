@@ -5,9 +5,10 @@ import (
 	"log"
 	"time"
 
+	"project-neo/shared/repository"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"project-neo/shared/repository"
 )
 
 // StartListener opens a persistent PostgreSQL LISTEN connection and fans out

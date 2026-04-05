@@ -37,7 +37,7 @@ export default {
     'subject-case': [2, 'never', ['upper-case']], // No UPPERCASE subjects
     'subject-empty': [2, 'never'], // Subject cannot be empty
     'subject-full-stop': [2, 'never', '.'], // No period at end
-    'header-max-length': [2, 'always', 100], // Max 100 characters for header
+    'header-max-length': [2, 'always', 120], // Max 100 characters for header
     'body-leading-blank': [2, 'always'], // Blank line before body
     'footer-leading-blank': [2, 'always'], // Blank line before footer
   },

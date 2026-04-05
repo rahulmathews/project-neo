@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 	"project-neo/shared/model"
 	"project-neo/shared/repository"
+
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type groupRepository struct {

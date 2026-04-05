@@ -1,3 +1,22 @@
 #!/usr/bin/env sh
-export PATH="$HOME/.bun/bin:$PATH"
+export PATH="$HOME/.bun/bin:$HOME/go/bin:$PATH"
+
+# Step 1: per-file auto-fixes (format, import sort, lint quick-fixes)
 bun lint-staged
+
+# Step 2: Go — lint gate per module (go.work requires per-module execution)
+# Auto-discovers all modules from go.work; only lints modules with staged files.
+if git diff --cached --name-only | grep -q '\.go$'; then
+  find . -name 'go.mod' -not -path './.git/*' -not -path '*/vendor/*' | while read gomod; do
+    module_dir=$(dirname "$gomod" | sed 's|^\./||')
+    if git diff --cached --name-only | grep -q "^$module_dir/"; then
+      echo "golangci-lint: $module_dir"
+      (cd "$module_dir" && golangci-lint run --fast --timeout 60s ./...)
+    fi
+  done
+fi
+
+# Step 3: Dart — analyze on commit (uncomment when apps/mobile is added)
+# if git diff --cached --name-only | grep -q '\.dart$'; then
+#   dart analyze apps/mobile
+# fi

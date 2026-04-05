@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 	"project-neo/shared/model"
 	"project-neo/shared/repository"
+
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type matchRepository struct {
@@ -67,6 +68,8 @@ func (r *matchRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status
 		Where("id = ?", id)
 
 	switch status {
+	case model.MatchStatusPending:
+		// no timestamp to update
 	case model.MatchStatusAccepted:
 		now := time.Now()
 		q = q.Set("accepted_at = ?", now)

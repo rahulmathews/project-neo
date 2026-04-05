@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"project-neo/shared/model"
+
+	"github.com/google/uuid"
 )
 
 type MatchRepository interface {
