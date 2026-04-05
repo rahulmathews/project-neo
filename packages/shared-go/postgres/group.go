@@ -7,13 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 )
 
 type groupRepository struct {
 	db *bun.DB
 }
 
-func NewGroupRepository(db *bun.DB) *groupRepository {
+func NewGroupRepository(db *bun.DB) repository.GroupRepository {
 	return &groupRepository{db: db}
 }
 

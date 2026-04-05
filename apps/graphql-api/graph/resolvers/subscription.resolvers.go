@@ -11,15 +11,15 @@ import (
 	"github.com/google/uuid"
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
-	model1 "project-neo/shared/model"
+	sharedmodel "project-neo/shared/model"
 )
 
 // RideAdded is the resolver for the rideAdded field.
-func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
+func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID) (<-chan *sharedmodel.Ride, error) {
 	if _, err := auth.UserIDFromCtx(ctx); err != nil {
 		return nil, err
 	}
-	ch := make(chan *model1.Ride, 4)
+	ch := make(chan *sharedmodel.Ride, 4)
 	events, cancel := r.Resolver.Broker.SubscribeRideAdded()
 
 	go func() {
@@ -47,11 +47,11 @@ func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID)
 }
 
 // RideStatusChanged is the resolver for the rideStatusChanged field.
-func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
+func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uuid.UUID) (<-chan *sharedmodel.Ride, error) {
 	if _, err := auth.UserIDFromCtx(ctx); err != nil {
 		return nil, err
 	}
-	ch := make(chan *model1.Ride, 4)
+	ch := make(chan *sharedmodel.Ride, 4)
 	events, cancel := r.Resolver.Broker.SubscribeRideUpdated()
 
 	go func() {
@@ -79,12 +79,12 @@ func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uu
 }
 
 // MatchStatusChanged is the resolver for the matchStatusChanged field.
-func (r *subscriptionResolver) MatchStatusChanged(ctx context.Context) (<-chan *model1.Match, error) {
+func (r *subscriptionResolver) MatchStatusChanged(ctx context.Context) (<-chan *sharedmodel.Match, error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ch := make(chan *model1.Match, 4)
+	ch := make(chan *sharedmodel.Match, 4)
 	events, cancel := r.Resolver.Broker.SubscribeMatchUpdated()
 
 	go func() {

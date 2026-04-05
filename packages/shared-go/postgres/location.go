@@ -7,13 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 )
 
 type locationRepository struct {
 	db *bun.DB
 }
 
-func NewLocationRepository(db *bun.DB) *locationRepository {
+func NewLocationRepository(db *bun.DB) repository.LocationRepository {
 	return &locationRepository{db: db}
 }
 

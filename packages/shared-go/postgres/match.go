@@ -8,13 +8,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 )
 
 type matchRepository struct {
 	db *bun.DB
 }
 
-func NewMatchRepository(db *bun.DB) *matchRepository {
+func NewMatchRepository(db *bun.DB) repository.MatchRepository {
 	return &matchRepository{db: db}
 }
 

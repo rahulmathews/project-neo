@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
-	model1 "project-neo/shared/model"
+	sharedmodel "project-neo/shared/model"
 )
 
 // Health is the resolver for the health field.
@@ -20,7 +20,7 @@ func (r *queryResolver) Health(ctx context.Context) (string, error) {
 }
 
 // Me is the resolver for the me field.
-func (r *queryResolver) Me(ctx context.Context) (*model1.User, error) {
+func (r *queryResolver) Me(ctx context.Context) (*sharedmodel.User, error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -29,22 +29,22 @@ func (r *queryResolver) Me(ctx context.Context) (*model1.User, error) {
 }
 
 // Rides is the resolver for the rides field.
-func (r *queryResolver) Rides(ctx context.Context, groupID uuid.UUID, typeArg *model1.RideType, status *model1.RideStatus, limit *int, offset *int) ([]*model1.Ride, error) {
+func (r *queryResolver) Rides(ctx context.Context, groupID uuid.UUID, typeArg *sharedmodel.RideType, status *sharedmodel.RideStatus, limit *int, offset *int) ([]*sharedmodel.Ride, error) {
 	_, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	filter := model1.RideFilter{
+	filter := sharedmodel.RideFilter{
 		GroupID:    groupID,
 		Type:       typeArg,
 		Status:     status,
-		Pagination: model1.NewPagination(limit, offset),
+		Pagination: sharedmodel.NewPagination(limit, offset),
 	}
 	return r.Resolver.Rides.List(ctx, filter)
 }
 
 // Ride is the resolver for the ride field.
-func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*model1.Ride, error) {
+func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*sharedmodel.Ride, error) {
 	_, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -53,35 +53,35 @@ func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*model1.Ride, e
 }
 
 // MyRides is the resolver for the myRides field.
-func (r *queryResolver) MyRides(ctx context.Context, limit *int, offset *int) ([]*model1.Ride, error) {
+func (r *queryResolver) MyRides(ctx context.Context, limit *int, offset *int) ([]*sharedmodel.Ride, error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return r.Resolver.Rides.ListByUser(ctx, userID, model1.NewPagination(limit, offset))
+	return r.Resolver.Rides.ListByUser(ctx, userID, sharedmodel.NewPagination(limit, offset))
 }
 
 // MyMatches is the resolver for the myMatches field.
-func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) ([]*model1.Match, error) {
+func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) ([]*sharedmodel.Match, error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return r.Resolver.Matches.ListByUser(ctx, userID, model1.NewPagination(limit, offset))
+	return r.Resolver.Matches.ListByUser(ctx, userID, sharedmodel.NewPagination(limit, offset))
 }
 
 // Groups is the resolver for the groups field.
-func (r *queryResolver) Groups(ctx context.Context) ([]*model1.Group, error) {
+func (r *queryResolver) Groups(ctx context.Context) ([]*sharedmodel.Group, error) {
 	return r.Resolver.Groups.List(ctx)
 }
 
 // Group is the resolver for the group field.
-func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*model1.Group, error) {
+func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*sharedmodel.Group, error) {
 	return r.Resolver.Groups.GetByID(ctx, id)
 }
 
 // Locations is the resolver for the locations field.
-func (r *queryResolver) Locations(ctx context.Context, query string) ([]*model1.Location, error) {
+func (r *queryResolver) Locations(ctx context.Context, query string) ([]*sharedmodel.Location, error) {
 	return r.Resolver.Locations.Search(ctx, query)
 }
 

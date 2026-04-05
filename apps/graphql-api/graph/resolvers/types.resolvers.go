@@ -9,21 +9,21 @@ import (
 	"context"
 
 	"project-neo/graphql-api/graph/generated"
-	model1 "project-neo/shared/model"
+	sharedmodel "project-neo/shared/model"
 )
 
 // LocationContexts is the resolver for the locationContexts field.
-func (r *groupResolver) LocationContexts(ctx context.Context, obj *model1.Group) ([]*model1.LocationContext, error) {
+func (r *groupResolver) LocationContexts(ctx context.Context, obj *sharedmodel.Group) ([]*sharedmodel.LocationContext, error) {
 	return r.Resolver.Groups.ListLocationContexts(ctx, obj.ID)
 }
 
 // Group is the resolver for the group field.
-func (r *locationContextResolver) Group(ctx context.Context, obj *model1.LocationContext) (*model1.Group, error) {
+func (r *locationContextResolver) Group(ctx context.Context, obj *sharedmodel.LocationContext) (*sharedmodel.Group, error) {
 	return r.Resolver.Groups.GetByID(ctx, obj.GroupID)
 }
 
 // Location is the resolver for the location field.
-func (r *locationContextResolver) Location(ctx context.Context, obj *model1.LocationContext) (*model1.Location, error) {
+func (r *locationContextResolver) Location(ctx context.Context, obj *sharedmodel.LocationContext) (*sharedmodel.Location, error) {
 	if obj.LocationID == nil {
 		return nil, nil
 	}
@@ -31,27 +31,27 @@ func (r *locationContextResolver) Location(ctx context.Context, obj *model1.Loca
 }
 
 // Ride is the resolver for the ride field.
-func (r *matchResolver) Ride(ctx context.Context, obj *model1.Match) (*model1.Ride, error) {
+func (r *matchResolver) Ride(ctx context.Context, obj *sharedmodel.Match) (*sharedmodel.Ride, error) {
 	return r.Resolver.Rides.GetByID(ctx, obj.RideID)
 }
 
 // Rider is the resolver for the rider field.
-func (r *matchResolver) Rider(ctx context.Context, obj *model1.Match) (*model1.User, error) {
+func (r *matchResolver) Rider(ctx context.Context, obj *sharedmodel.Match) (*sharedmodel.User, error) {
 	return r.Resolver.Users.GetByID(ctx, obj.RiderID)
 }
 
 // Driver is the resolver for the driver field.
-func (r *matchResolver) Driver(ctx context.Context, obj *model1.Match) (*model1.User, error) {
+func (r *matchResolver) Driver(ctx context.Context, obj *sharedmodel.Match) (*sharedmodel.User, error) {
 	return r.Resolver.Users.GetByID(ctx, obj.DriverID)
 }
 
 // Group is the resolver for the group field.
-func (r *rideResolver) Group(ctx context.Context, obj *model1.Ride) (*model1.Group, error) {
+func (r *rideResolver) Group(ctx context.Context, obj *sharedmodel.Ride) (*sharedmodel.Group, error) {
 	return r.Resolver.Groups.GetByID(ctx, obj.GroupID)
 }
 
 // FromLocationContext is the resolver for the fromLocationContext field.
-func (r *rideResolver) FromLocationContext(ctx context.Context, obj *model1.Ride) (*model1.LocationContext, error) {
+func (r *rideResolver) FromLocationContext(ctx context.Context, obj *sharedmodel.Ride) (*sharedmodel.LocationContext, error) {
 	if obj.FromLocationID == nil {
 		return nil, nil
 	}
@@ -59,7 +59,7 @@ func (r *rideResolver) FromLocationContext(ctx context.Context, obj *model1.Ride
 }
 
 // ToLocationContext is the resolver for the toLocationContext field.
-func (r *rideResolver) ToLocationContext(ctx context.Context, obj *model1.Ride) (*model1.LocationContext, error) {
+func (r *rideResolver) ToLocationContext(ctx context.Context, obj *sharedmodel.Ride) (*sharedmodel.LocationContext, error) {
 	if obj.ToLocationID == nil {
 		return nil, nil
 	}
@@ -67,7 +67,7 @@ func (r *rideResolver) ToLocationContext(ctx context.Context, obj *model1.Ride) 
 }
 
 // PostedBy is the resolver for the postedBy field.
-func (r *rideResolver) PostedBy(ctx context.Context, obj *model1.Ride) (*model1.User, error) {
+func (r *rideResolver) PostedBy(ctx context.Context, obj *sharedmodel.Ride) (*sharedmodel.User, error) {
 	if obj.PosterUserID == nil {
 		return nil, nil
 	}

@@ -8,13 +8,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 )
 
 type rideRepository struct {
 	db *bun.DB
 }
 
-func NewRideRepository(db *bun.DB) *rideRepository {
+func NewRideRepository(db *bun.DB) repository.RideRepository {
 	return &rideRepository{db: db}
 }
 

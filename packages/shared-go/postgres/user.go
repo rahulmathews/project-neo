@@ -7,13 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 )
 
 type userRepository struct {
 	db *bun.DB
 }
 
-func NewUserRepository(db *bun.DB) *userRepository {
+func NewUserRepository(db *bun.DB) repository.UserRepository {
 	return &userRepository{db: db}
 }
 
