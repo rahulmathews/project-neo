@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"project-neo/graphql-api/graph/generated"
+	"project-neo/graphql-api/internal/auth"
 	"project-neo/graphql-api/internal/model"
 
 	"github.com/google/uuid"
@@ -16,78 +17,130 @@ import (
 
 // UpsertUser is the resolver for the upsertUser field.
 func (r *mutationResolver) UpsertUser(ctx context.Context, input model.UpsertUserInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: UpsertUser - upsertUser"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Users.Upsert(ctx, userID, input)
 }
 
 // CreateRide is the resolver for the createRide field.
 func (r *mutationResolver) CreateRide(ctx context.Context, input model.CreateRideInput) (*model.Ride, error) {
-	panic(fmt.Errorf("not implemented: CreateRide - createRide"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Rides.Create(ctx, userID, input)
 }
 
 // UpdateRide is the resolver for the updateRide field.
 func (r *mutationResolver) UpdateRide(ctx context.Context, id uuid.UUID, input model.UpdateRideInput) (*model.Ride, error) {
-	panic(fmt.Errorf("not implemented: UpdateRide - updateRide"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Rides.Update(ctx, id, userID, input)
 }
 
 // CancelRide is the resolver for the cancelRide field.
 func (r *mutationResolver) CancelRide(ctx context.Context, id uuid.UUID) (*model.Ride, error) {
-	panic(fmt.Errorf("not implemented: CancelRide - cancelRide"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Rides.Cancel(ctx, id, userID)
 }
 
 // AcceptMatch is the resolver for the acceptMatch field.
 func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: AcceptMatch - acceptMatch"))
+	driverID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ride, err := r.Resolver.Rides.GetByID(ctx, rideID)
+	if err != nil {
+		return nil, err
+	}
+	if ride.PosterUserID == nil {
+		return nil, fmt.Errorf("ride poster is not a registered user — contact via WhatsApp relay")
+	}
+	if ride.Status != model.RideStatusAvailable {
+		return nil, fmt.Errorf("ride is not available")
+	}
+	match, err := r.Resolver.Matches.Create(ctx, rideID, *ride.PosterUserID, driverID)
+	if err != nil {
+		return nil, err
+	}
+	match, err = r.Resolver.Matches.UpdateStatus(ctx, match.ID, model.MatchStatusAccepted)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := r.Resolver.Rides.SetStatus(ctx, rideID, model.RideStatusMatched); err != nil {
+		return nil, err
+	}
+	return match, nil
 }
 
 // RejectMatch is the resolver for the rejectMatch field.
 func (r *mutationResolver) RejectMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: RejectMatch - rejectMatch"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusRejected)
 }
 
 // CompleteMatch is the resolver for the completeMatch field.
 func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: CompleteMatch - completeMatch"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCompleted)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := r.Resolver.Rides.SetStatus(ctx, match.RideID, model.RideStatusCompleted); err != nil {
+		return nil, err
+	}
+	return match, nil
 }
 
 // CancelMatch is the resolver for the cancelMatch field.
 func (r *mutationResolver) CancelMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: CancelMatch - cancelMatch"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCancelled)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := r.Resolver.Rides.SetStatus(ctx, match.RideID, model.RideStatusAvailable); err != nil {
+		return nil, err
+	}
+	return match, nil
 }
 
 // CreateGroup is the resolver for the createGroup field.
 func (r *mutationResolver) CreateGroup(ctx context.Context, input model.CreateGroupInput) (*model.Group, error) {
-	panic(fmt.Errorf("not implemented: CreateGroup - createGroup"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Groups.Create(ctx, input)
 }
 
 // UpsertLocationContext is the resolver for the upsertLocationContext field.
 func (r *mutationResolver) UpsertLocationContext(ctx context.Context, input model.UpsertLocationContextInput) (*model.LocationContext, error) {
-	panic(fmt.Errorf("not implemented: UpsertLocationContext - upsertLocationContext"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Groups.UpsertLocationContext(ctx, input)
 }
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *createRideInputResolver) DepartureTime(ctx context.Context, obj *model.CreateRideInput, data *time.Time) error {
-	panic(fmt.Errorf("not implemented: DepartureTime - departureTime"))
-}
-func (r *updateRideInputResolver) DepartureTime(ctx context.Context, obj *model.UpdateRideInput, data *time.Time) error {
-	panic(fmt.Errorf("not implemented: DepartureTime - departureTime"))
-}
-func (r *Resolver) CreateRideInput() generated.CreateRideInputResolver {
-	return &createRideInputResolver{r}
-}
-func (r *Resolver) UpdateRideInput() generated.UpdateRideInputResolver {
-	return &updateRideInputResolver{r}
-}
-type createRideInputResolver struct{ *Resolver }
-type updateRideInputResolver struct{ *Resolver }
-*/
