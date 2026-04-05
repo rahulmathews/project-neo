@@ -1,8 +1,8 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: March 21, 2026
+**Last Updated**: April 5, 2026
 
-## Phase 1: Development Infrastructure Setup (Current)
+## Phase 1: Development Infrastructure Setup
 
 ### ✅ Completed
 - [x] Initialize Git repository
@@ -14,17 +14,12 @@
 - [x] Add Biome for formatting/linting (10-25x faster than Prettier+ESLint)
 - [x] Configure Husky for git hooks
 - [x] Configure lint-staged for pre-commit checks
-
-### 🔄 In Progress
-- [ ] Add commitlint for conventional commits enforcement
-- [ ] Create commit-msg hook
-
-### 📋 Pending (Current Phase)
-- [ ] Add Changesets for version management
-- [ ] Create GitHub Actions CI/CD workflows
-  - [ ] CI workflow (lint, format check, build)
-  - [ ] Release workflow (changesets, GitHub releases)
-- [ ] Update CLAUDE.md with final tooling documentation
+- [x] Add commitlint for conventional commits enforcement
+- [x] Create commit-msg hook
+- [x] Add Changesets for version management
+- [x] Create GitHub Actions CI/CD workflows
+  - [x] CI workflow (lint, format check, build)
+  - [x] Release workflow (changesets, GitHub releases)
 
 ---
 
@@ -37,37 +32,17 @@
 - [x] Create .env.example
 - [x] Create individual Dockerfiles for each service
   - [x] `apps/workers/Dockerfile`
-  - [x] `packages/graphql-api/Dockerfile`
+  - [x] `apps/graphql-api/Dockerfile`
 - [x] Add Docker-related scripts to Makefile
   - [x] `docker-up` - Start all services
   - [x] `docker-down` - Stop all services
   - [x] `docker-build` - Build all images
   - [x] `docker-logs` - View logs
   - [x] `dev-up` / `dev-down` - Start/stop everything
+- [x] Add health checks to containers
 - [x] Set up environment variable templates (.env.example)
 
-### 📋 Docker Infrastructure
-- [ ] Create root Dockerfile (multi-stage build)
-- [ ] Create docker-compose.yml for local development
-  - [ ] Supabase services (PostgreSQL, PostgREST, Realtime, Auth)
-  - [ ] Workers service
-  - [ ] GraphQL API service
-  - [ ] PgAdmin or database management UI
-- [ ] Create .dockerignore
-- [ ] Create individual Dockerfiles for each service
-  - [ ] `apps/workers/Dockerfile`
-  - [ ] `packages/graphql-api/Dockerfile`
-- [ ] Add Docker-related scripts to package.json
-  - [ ] `docker:up` - Start all services
-  - [ ] `docker:down` - Stop all services
-  - [ ] `docker:build` - Build all images
-  - [ ] `docker:logs` - View logs
-- [ ] Document Docker setup in CLAUDE.md
-- [ ] Add health checks to containers
-- [ ] Configure volume mounts for development hot-reload
-- [ ] Set up environment variable templates (.env.example)
-
-### 📋 Production Docker Setup
+### 📋 Production Docker Setup (Pending)
 - [ ] Optimize Docker images for production (multi-stage builds)
 - [ ] Add Docker security best practices
   - [ ] Non-root user
@@ -80,41 +55,57 @@
 
 ## Phase 3: Core Application Structure
 
-### 📋 Supabase Setup
+### ✅ Completed — Supabase Setup
+- [x] Install Supabase CLI
+- [x] Initialize Supabase locally (`supabase init`)
+- [x] Design and apply database schema migrations (8 tables)
+  - [x] users table
+  - [x] groups table
+  - [x] group_sources table
+  - [x] location_contexts table
+  - [x] messages table
+  - [x] rides table
+  - [x] matches table
+  - [x] locations table
+- [x] Set up Row Level Security (RLS) policies
+- [x] Add updated_at triggers
+- [x] Add NOTIFY triggers for GraphQL subscriptions (pg_notify)
+- [x] Add indexes for query performance
 
-> **Note:** Supabase CLI not yet installed. Install via `scoop install supabase` or `winget install Supabase.CLI`, then run `supabase init` from repo root.
-
-- [ ] Initialize Supabase locally (`supabase init`)
-- [ ] Design database schema (from CLAUDE.md)
-  - [ ] users table
-  - [ ] groups table
-  - [ ] group_sources table
-  - [ ] location_contexts table
-  - [ ] messages table
-  - [ ] rides table
-  - [ ] matches table
-  - [ ] locations table
-- [ ] Create migration files
-- [ ] Set up Row Level Security (RLS) policies
+### 📋 Supabase Pending
 - [ ] Configure Auth providers
-- [ ] Set up Realtime subscriptions
 - [ ] Add database seed data for development
 
-### 📋 Shared Packages
-- [ ] Create `packages/shared-types` (TypeScript types)
-- [ ] Create `packages/database` (Supabase client, schemas)
-- [ ] Create `packages/graphql-api` (GraphQL server)
-  - [ ] Schema definitions
-  - [ ] Resolvers
-  - [ ] Subscriptions for realtime
-  - [ ] Authentication middleware
-- [ ] Add proper TypeScript configuration
+### ✅ Completed — Shared Go Package (`packages/shared-go`)
+- [x] Create `packages/shared-go` module (`project-neo/shared`)
+- [x] Move domain models (`model/`) from graphql-api internal
+- [x] Move repository interfaces (`repository/`) from graphql-api internal
+- [x] Move postgres CRUD implementations (`postgres/`) from graphql-api internal
+- [x] Add to go.work workspace
+- [x] Update all import paths in graphql-api (resolvers, main, gqlgen.yml, generated)
 
-### 📋 Workers Service (apps/workers)
-- [ ] Initialize Node.js/Bun project
+### ✅ Completed — GraphQL API (`apps/graphql-api`)
+- [x] Initialize Go module
+- [x] Initialize gqlgen with schema definitions
+- [x] Define GraphQL schema (types, queries, mutations, subscriptions)
+- [x] Implement internal domain models
+- [x] Implement postgres repository layer (all entities)
+- [x] Implement pg_notify listener + broker for subscriptions
+- [x] Implement query resolvers
+- [x] Implement mutation resolvers
+- [x] Implement subscription resolvers
+- [x] Wire auth middleware
+- [x] Health endpoint verified
+
+### ✅ Completed — Workers Service (`apps/workers`)
+- [x] Initialize Go module
+- [x] Set up worker framework
+- [x] Health endpoint verified
+
+### 📋 Workers Service — Pending
 - [ ] Set up message source connectors
-  - [ ] WhatsApp connector (whatsapp-web.js/baileys)
-  - [ ] Telegram connector (Telegram Bot API)
+  - [ ] WhatsApp connector (whatsmeow)
+  - [ ] Telegram connector (go-telegram-bot-api)
   - [ ] Manual entry connector
 - [ ] Implement message parser
   - [ ] NLP/regex-based extraction
@@ -125,9 +116,8 @@
   - [ ] Parse and store messages
   - [ ] Error handling and retries
 - [ ] Add logging and monitoring
-- [ ] Write unit tests
 
-### 📋 Flutter Mobile App (apps/mobile)
+### 📋 Flutter Mobile App (`apps/mobile`) — Not Started
 - [ ] Initialize Flutter project
 - [ ] Set up project structure
   - [ ] Features-based architecture
@@ -137,7 +127,7 @@
   - [ ] Ride listing (available rides)
   - [ ] Ride requests (need ride)
   - [ ] User matching UI
-  - [ ] Real-time updates (subscriptions)
+  - [ ] Real-time updates (GraphQL subscriptions)
   - [ ] Location context configuration
 - [ ] UI/UX
   - [ ] Material Design + Cupertino widgets
@@ -147,25 +137,13 @@
   - [ ] iOS configuration
   - [ ] Android configuration
   - [ ] Permissions (location, notifications)
-- [ ] Testing
-  - [ ] Unit tests
-  - [ ] Widget tests
-  - [ ] Integration tests
 
 ---
 
-## Phase 4: Testing & Quality Assurance
+## Phase 4: Monitoring & Observability
 
-### 📋 Testing Infrastructure
-- [ ] Set up Vitest/Bun test runner for backend
-- [ ] Configure test coverage reporting
-- [ ] Add GitHub Actions for running tests
-- [ ] Integration tests for GraphQL API
-- [ ] E2E tests for critical user flows
-- [ ] Flutter widget and integration tests
-
-### 📋 Monitoring & Observability
-- [ ] Add structured logging (Winston/Pino)
+### 📋 Pending
+- [ ] Add structured logging to Go services
 - [ ] Set up error tracking (Sentry or self-hosted alternative)
 - [ ] Add metrics collection (Prometheus/Grafana - optional)
 - [ ] Database query performance monitoring
@@ -175,47 +153,31 @@
 
 ## Phase 5: Documentation & Developer Experience
 
-### 📋 Documentation
-- [ ] Complete CLAUDE.md with all setup instructions
+### 📋 Pending
 - [ ] Create CONTRIBUTING.md
-  - [ ] Development workflow
-  - [ ] Commit conventions
-  - [ ] PR process
-  - [ ] Changeset creation guide
 - [ ] Update README.md
   - [ ] Project overview
   - [ ] Quick start guide
   - [ ] Architecture diagram
   - [ ] Deployment instructions
 - [ ] API documentation (GraphQL schema docs)
-- [ ] Database schema documentation
 - [ ] Architecture Decision Records (ADRs)
-
-### 📋 Developer Tools
-- [ ] VS Code workspace settings
-- [ ] Recommended VS Code extensions list
-- [ ] Debug configurations for VS Code
-- [ ] Cursor/Copilot rules (if applicable)
 
 ---
 
 ## Phase 6: Deployment & DevOps
 
-### 📋 VPS Deployment
+### 📋 Pending
 - [ ] Create deployment scripts
 - [ ] Set up reverse proxy (Nginx/Caddy)
 - [ ] SSL/TLS certificates (Let's Encrypt)
 - [ ] Environment configuration management
 - [ ] Database backups automation
 - [ ] Log rotation and management
-- [ ] Monitoring and alerts
-
-### 📋 CI/CD Enhancement
 - [ ] Automated deployment on merge to main
 - [ ] Staging environment setup
 - [ ] Database migration automation
 - [ ] Rollback procedures
-- [ ] Performance testing in CI
 
 ---
 
@@ -250,14 +212,7 @@
 
 ## Current Status Summary
 
-**Completed**: 9 tasks
-**In Progress**: 2 tasks
-**Pending in Current Phase**: 4 tasks
-**Total Roadmap Items**: 100+
-
 **Next Immediate Tasks**:
-1. Install Supabase CLI and run `supabase init`
-2. Design and apply database schema migrations (8 tables)
-3. Configure Supabase Row Level Security (RLS) policies
-4. Set up GraphQL resolvers for ride CRUD operations
-5. Begin Flutter mobile app scaffold
+1. Begin Flutter mobile app scaffold (`apps/mobile`)
+2. Add database seed data for development
+3. Implement message source connectors in workers service

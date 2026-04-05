@@ -7,10 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"project-neo/graphql-api/internal/model"
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"project-neo/shared/model"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -38,8 +39,7 @@ type ResolverRoot interface {
 	Subscription() SubscriptionResolver
 }
 
-type DirectiveRoot struct {
-}
+type DirectiveRoot struct{}
 
 type ComplexityRoot struct {
 	Group struct {

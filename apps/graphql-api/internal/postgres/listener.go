@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"project-neo/graphql-api/internal/repository"
+	"project-neo/shared/repository"
 )
 
 // StartListener opens a persistent PostgreSQL LISTEN connection and fans out

@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
-	"project-neo/graphql-api/internal/model"
+	"project-neo/shared/model"
 )
 
 type userRepository struct {

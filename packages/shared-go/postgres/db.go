@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
-	"project-neo/graphql-api/internal/model"
+	"project-neo/shared/model"
 )
 
 // NewDB creates and returns a configured Bun DB instance.

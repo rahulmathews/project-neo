@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
-	model1 "project-neo/graphql-api/internal/model"
+	model1 "project-neo/shared/model"
 )
 
 // RideAdded is the resolver for the rideAdded field.

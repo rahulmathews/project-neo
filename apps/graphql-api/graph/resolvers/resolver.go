@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"project-neo/graphql-api/internal/postgres"
-	"project-neo/graphql-api/internal/repository"
+	"project-neo/shared/repository"
 )
 
 // Resolver is the root resolver. All repositories are injected here.

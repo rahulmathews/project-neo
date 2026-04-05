@@ -3,7 +3,7 @@ package postgres
 import (
 	"sync"
 
-	"project-neo/graphql-api/internal/model"
+	"project-neo/shared/model"
 )
 
 // RideEvent carries a ride and its group context for subscription fan-out.

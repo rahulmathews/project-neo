@@ -13,7 +13,8 @@ import (
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
-	"project-neo/graphql-api/internal/postgres"
+	ipostgres "project-neo/graphql-api/internal/postgres"
+	"project-neo/shared/postgres"
 )
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 	}
 	defer db.Close()
 
-	broker := postgres.NewBroker()
+	broker := ipostgres.NewBroker()
 
 	rideRepo := postgres.NewRideRepository(db)
 	matchRepo := postgres.NewMatchRepository(db)
@@ -44,7 +45,7 @@ func main() {
 	// Start LISTEN/NOTIFY listener in background — receives repo interfaces, not concrete types
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go postgres.StartListener(ctx, dsn, rideRepo, matchRepo, broker)
+	go ipostgres.StartListener(ctx, dsn, rideRepo, matchRepo, broker)
 
 	resolver := &resolvers.Resolver{
 		Users:     postgres.NewUserRepository(db),

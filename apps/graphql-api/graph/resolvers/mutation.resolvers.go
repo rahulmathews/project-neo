@@ -8,9 +8,10 @@ package resolvers
 import (
 	"context"
 	"fmt"
+
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
-	"project-neo/graphql-api/internal/model"
+	"project-neo/shared/model"
 
 	"github.com/google/uuid"
 )

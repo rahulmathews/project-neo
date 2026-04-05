@@ -16,7 +16,7 @@ resolver:
   filename_template: "{name}.resolvers.go"
 
 autobind:
-  - "project-neo/graphql-api/internal/model"
+  - "project-neo/shared/model"
 
 models:
   # Scalars
@@ -28,24 +28,24 @@ models:
       - github.com/99designs/gqlgen/graphql.Time
   # Enums — explicitly bind to internal/model to avoid duplicate generation
   UserRole:
-    model: project-neo/graphql-api/internal/model.UserRole
+    model: project-neo/shared/model.UserRole
   RideType:
-    model: project-neo/graphql-api/internal/model.RideType
+    model: project-neo/shared/model.RideType
   RideStatus:
-    model: project-neo/graphql-api/internal/model.RideStatus
+    model: project-neo/shared/model.RideStatus
   MatchStatus:
-    model: project-neo/graphql-api/internal/model.MatchStatus
+    model: project-neo/shared/model.MatchStatus
   # Input types — explicitly bind to internal/model (autobind does not cover inputs)
   UpsertUserInput:
-    model: project-neo/graphql-api/internal/model.UpsertUserInput
+    model: project-neo/shared/model.UpsertUserInput
   CreateRideInput:
-    model: project-neo/graphql-api/internal/model.CreateRideInput
+    model: project-neo/shared/model.CreateRideInput
   UpdateRideInput:
-    model: project-neo/graphql-api/internal/model.UpdateRideInput
+    model: project-neo/shared/model.UpdateRideInput
   CreateGroupInput:
-    model: project-neo/graphql-api/internal/model.CreateGroupInput
+    model: project-neo/shared/model.CreateGroupInput
   UpsertLocationContextInput:
-    model: project-neo/graphql-api/internal/model.UpsertLocationContextInput
+    model: project-neo/shared/model.UpsertLocationContextInput
   # Relationship fields — lazy-loaded via resolver methods
   Ride:
     fields:

@@ -9,7 +9,7 @@ import (
 	"context"
 
 	"project-neo/graphql-api/graph/generated"
-	model1 "project-neo/graphql-api/internal/model"
+	model1 "project-neo/shared/model"
 )
 
 // LocationContexts is the resolver for the locationContexts field.
@@ -88,7 +88,9 @@ func (r *Resolver) Match() generated.MatchResolver { return &matchResolver{r} }
 // Ride returns generated.RideResolver implementation.
 func (r *Resolver) Ride() generated.RideResolver { return &rideResolver{r} }
 
-type groupResolver struct{ *Resolver }
-type locationContextResolver struct{ *Resolver }
-type matchResolver struct{ *Resolver }
-type rideResolver struct{ *Resolver }
+type (
+	groupResolver           struct{ *Resolver }
+	locationContextResolver struct{ *Resolver }
+	matchResolver           struct{ *Resolver }
+	rideResolver            struct{ *Resolver }
+)

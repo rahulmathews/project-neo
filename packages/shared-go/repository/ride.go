@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"project-neo/graphql-api/internal/model"
+	"project-neo/shared/model"
 )
 
 type RideRepository interface {
