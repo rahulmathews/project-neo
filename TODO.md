@@ -2,6 +2,8 @@
 
 **Last Updated**: April 5, 2026
 
+> Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
+
 ## Phase 1: Development Infrastructure Setup
 
 ### ✅ Completed
@@ -43,11 +45,10 @@
 - [x] Set up environment variable templates (.env.example)
 
 ### 📋 Production Docker Setup (Pending)
-- [ ] Optimize Docker images for production (multi-stage builds)
-- [ ] Add Docker security best practices
-  - [ ] Non-root user
-  - [ ] Minimal base images (Alpine/Distroless)
-  - [ ] Security scanning
+- [x] Multi-stage builds (golang:1.25-alpine → distroless)
+- [x] Non-root user (distroless:nonroot)
+- [x] Minimal base image (distroless/static)
+- [ ] Security scanning
 - [ ] Create docker-compose.prod.yml
 - [ ] Add Kubernetes manifests (optional, future)
 
@@ -58,31 +59,32 @@
 ### ✅ Completed — Supabase Setup
 - [x] Install Supabase CLI
 - [x] Initialize Supabase locally (`supabase init`)
-- [x] Design and apply database schema migrations (8 tables)
-  - [x] users table
-  - [x] groups table
-  - [x] group_sources table
-  - [x] location_contexts table
-  - [x] messages table
-  - [x] rides table
-  - [x] matches table
-  - [x] locations table
-- [x] Set up Row Level Security (RLS) policies
-- [x] Add updated_at triggers
-- [x] Add NOTIFY triggers for GraphQL subscriptions (pg_notify)
-- [x] Add indexes for query performance
+- [x] Design database schema (8 tables — models exist in shared-go)
 
 ### 📋 Supabase Pending
+- [ ] Write SQL migration files (`supabase/migrations/` is currently empty)
+  - [ ] users table
+  - [ ] groups table
+  - [ ] group_sources table
+  - [ ] location_contexts table
+  - [ ] messages table
+  - [ ] rides table
+  - [ ] matches table
+  - [ ] locations table
+- [ ] Set up Row Level Security (RLS) policies
+- [ ] Add updated_at triggers
+- [ ] Add NOTIFY triggers for GraphQL subscriptions (`rides_added`, `rides_updated`, `matches_updated`)
+- [ ] Add indexes for query performance
 - [ ] Configure Auth providers
 - [ ] Add database seed data for development
 
 ### ✅ Completed — Shared Go Package (`packages/shared-go`)
 - [x] Create `packages/shared-go` module (`project-neo/shared`)
-- [x] Move domain models (`model/`) from graphql-api internal
-- [x] Move repository interfaces (`repository/`) from graphql-api internal
-- [x] Move postgres CRUD implementations (`postgres/`) from graphql-api internal
+- [x] Domain models (`model/`): User, Group, Location, LocationContext, Ride, Match, inputs
+- [x] Repository interfaces (`repository/`): User, Group, Ride, Match, Location
+- [x] PostgreSQL implementations (`postgres/`): all entities via Bun ORM
 - [x] Add to go.work workspace
-- [x] Update all import paths in graphql-api (resolvers, main, gqlgen.yml, generated)
+- [x] Update all import paths in graphql-api
 
 ### ✅ Completed — GraphQL API (`apps/graphql-api`)
 - [x] Initialize Go module
@@ -212,7 +214,9 @@
 
 ## Current Status Summary
 
+**Blocker**: `supabase/migrations/` is empty — the app cannot run end-to-end until SQL migrations are written and `supabase db push` is run.
+
 **Next Immediate Tasks**:
-1. Begin Flutter mobile app scaffold (`apps/mobile`)
-2. Add database seed data for development
-3. Implement message source connectors in workers service
+1. Write SQL migrations for all 8 tables (with triggers and indexes)
+2. Implement message source connectors + parser in workers service
+3. Begin Flutter mobile app scaffold (`apps/mobile`)
