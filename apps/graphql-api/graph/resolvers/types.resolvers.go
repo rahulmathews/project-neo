@@ -7,59 +7,71 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
+
 	"project-neo/graphql-api/graph/generated"
 	model1 "project-neo/graphql-api/internal/model"
 )
 
 // LocationContexts is the resolver for the locationContexts field.
 func (r *groupResolver) LocationContexts(ctx context.Context, obj *model1.Group) ([]*model1.LocationContext, error) {
-	panic(fmt.Errorf("not implemented: LocationContexts - locationContexts"))
+	return r.Resolver.Groups.ListLocationContexts(ctx, obj.ID)
 }
 
 // Group is the resolver for the group field.
 func (r *locationContextResolver) Group(ctx context.Context, obj *model1.LocationContext) (*model1.Group, error) {
-	panic(fmt.Errorf("not implemented: Group - group"))
+	return r.Resolver.Groups.GetByID(ctx, obj.GroupID)
 }
 
 // Location is the resolver for the location field.
 func (r *locationContextResolver) Location(ctx context.Context, obj *model1.LocationContext) (*model1.Location, error) {
-	panic(fmt.Errorf("not implemented: Location - location"))
+	if obj.LocationID == nil {
+		return nil, nil
+	}
+	return r.Resolver.Locations.GetByID(ctx, *obj.LocationID)
 }
 
 // Ride is the resolver for the ride field.
 func (r *matchResolver) Ride(ctx context.Context, obj *model1.Match) (*model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: Ride - ride"))
+	return r.Resolver.Rides.GetByID(ctx, obj.RideID)
 }
 
 // Rider is the resolver for the rider field.
 func (r *matchResolver) Rider(ctx context.Context, obj *model1.Match) (*model1.User, error) {
-	panic(fmt.Errorf("not implemented: Rider - rider"))
+	return r.Resolver.Users.GetByID(ctx, obj.RiderID)
 }
 
 // Driver is the resolver for the driver field.
 func (r *matchResolver) Driver(ctx context.Context, obj *model1.Match) (*model1.User, error) {
-	panic(fmt.Errorf("not implemented: Driver - driver"))
+	return r.Resolver.Users.GetByID(ctx, obj.DriverID)
 }
 
 // Group is the resolver for the group field.
 func (r *rideResolver) Group(ctx context.Context, obj *model1.Ride) (*model1.Group, error) {
-	panic(fmt.Errorf("not implemented: Group - group"))
+	return r.Resolver.Groups.GetByID(ctx, obj.GroupID)
 }
 
 // FromLocationContext is the resolver for the fromLocationContext field.
 func (r *rideResolver) FromLocationContext(ctx context.Context, obj *model1.Ride) (*model1.LocationContext, error) {
-	panic(fmt.Errorf("not implemented: FromLocationContext - fromLocationContext"))
+	if obj.FromLocationID == nil {
+		return nil, nil
+	}
+	return r.Resolver.Groups.GetLocationContextByID(ctx, *obj.FromLocationID)
 }
 
 // ToLocationContext is the resolver for the toLocationContext field.
 func (r *rideResolver) ToLocationContext(ctx context.Context, obj *model1.Ride) (*model1.LocationContext, error) {
-	panic(fmt.Errorf("not implemented: ToLocationContext - toLocationContext"))
+	if obj.ToLocationID == nil {
+		return nil, nil
+	}
+	return r.Resolver.Groups.GetLocationContextByID(ctx, *obj.ToLocationID)
 }
 
 // PostedBy is the resolver for the postedBy field.
 func (r *rideResolver) PostedBy(ctx context.Context, obj *model1.Ride) (*model1.User, error) {
-	panic(fmt.Errorf("not implemented: PostedBy - postedBy"))
+	if obj.PosterUserID == nil {
+		return nil, nil
+	}
+	return r.Resolver.Users.GetByID(ctx, *obj.PosterUserID)
 }
 
 // Group returns generated.GroupResolver implementation.

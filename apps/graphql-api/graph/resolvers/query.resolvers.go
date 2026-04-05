@@ -7,56 +7,82 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
-	"project-neo/graphql-api/graph/generated"
-	model1 "project-neo/graphql-api/internal/model"
 
 	"github.com/google/uuid"
+	"project-neo/graphql-api/graph/generated"
+	"project-neo/graphql-api/internal/auth"
+	model1 "project-neo/graphql-api/internal/model"
 )
 
 // Health is the resolver for the health field.
 func (r *queryResolver) Health(ctx context.Context) (string, error) {
-	panic(fmt.Errorf("not implemented: Health - health"))
+	return "ok", nil
 }
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model1.User, error) {
-	panic(fmt.Errorf("not implemented: Me - me"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Users.GetByID(ctx, userID)
 }
 
 // Rides is the resolver for the rides field.
 func (r *queryResolver) Rides(ctx context.Context, groupID uuid.UUID, typeArg *model1.RideType, status *model1.RideStatus, limit *int, offset *int) ([]*model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: Rides - rides"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filter := model1.RideFilter{
+		GroupID:    groupID,
+		Type:       typeArg,
+		Status:     status,
+		Pagination: model1.NewPagination(limit, offset),
+	}
+	return r.Resolver.Rides.List(ctx, filter)
 }
 
 // Ride is the resolver for the ride field.
 func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: Ride - ride"))
+	_, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Rides.GetByID(ctx, id)
 }
 
 // MyRides is the resolver for the myRides field.
 func (r *queryResolver) MyRides(ctx context.Context, limit *int, offset *int) ([]*model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: MyRides - myRides"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Rides.ListByUser(ctx, userID, model1.NewPagination(limit, offset))
 }
 
 // MyMatches is the resolver for the myMatches field.
 func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) ([]*model1.Match, error) {
-	panic(fmt.Errorf("not implemented: MyMatches - myMatches"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.Resolver.Matches.ListByUser(ctx, userID, model1.NewPagination(limit, offset))
 }
 
 // Groups is the resolver for the groups field.
 func (r *queryResolver) Groups(ctx context.Context) ([]*model1.Group, error) {
-	panic(fmt.Errorf("not implemented: Groups - groups"))
+	return r.Resolver.Groups.List(ctx)
 }
 
 // Group is the resolver for the group field.
 func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*model1.Group, error) {
-	panic(fmt.Errorf("not implemented: Group - group"))
+	return r.Resolver.Groups.GetByID(ctx, id)
 }
 
 // Locations is the resolver for the locations field.
 func (r *queryResolver) Locations(ctx context.Context, query string) ([]*model1.Location, error) {
-	panic(fmt.Errorf("not implemented: Locations - locations"))
+	return r.Resolver.Locations.Search(ctx, query)
 }
 
 // Query returns generated.QueryResolver implementation.
