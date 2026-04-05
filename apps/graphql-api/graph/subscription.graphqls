@@ -1,0 +1,5 @@
+type Subscription {
+  rideAdded(groupId: UUID!): Ride!
+  rideStatusChanged(groupId: UUID!): Ride!
+  matchStatusChanged: Match!
+}

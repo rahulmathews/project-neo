@@ -1,5 +1,5 @@
 schema:
-  - graph/schema.graphqls
+  - graph/*.graphqls
 
 exec:
   filename: graph/generated/generated.go
@@ -11,6 +11,67 @@ model:
 
 resolver:
   layout: follow-schema
-  dir: graph
-  package: graph
+  dir: graph/resolvers
+  package: resolvers
   filename_template: "{name}.resolvers.go"
+
+autobind:
+  - "project-neo/graphql-api/internal/model"
+
+models:
+  # Scalars
+  UUID:
+    model:
+      - github.com/99designs/gqlgen/graphql.UUID
+  Time:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
+  # Enums — explicitly bind to internal/model to avoid duplicate generation
+  UserRole:
+    model: project-neo/graphql-api/internal/model.UserRole
+  RideType:
+    model: project-neo/graphql-api/internal/model.RideType
+  RideStatus:
+    model: project-neo/graphql-api/internal/model.RideStatus
+  MatchStatus:
+    model: project-neo/graphql-api/internal/model.MatchStatus
+  # Input types — explicitly bind to internal/model (autobind does not cover inputs)
+  UpsertUserInput:
+    model: project-neo/graphql-api/internal/model.UpsertUserInput
+  CreateRideInput:
+    model: project-neo/graphql-api/internal/model.CreateRideInput
+  UpdateRideInput:
+    model: project-neo/graphql-api/internal/model.UpdateRideInput
+  CreateGroupInput:
+    model: project-neo/graphql-api/internal/model.CreateGroupInput
+  UpsertLocationContextInput:
+    model: project-neo/graphql-api/internal/model.UpsertLocationContextInput
+  # Relationship fields — lazy-loaded via resolver methods
+  Ride:
+    fields:
+      group:
+        resolver: true
+      postedBy:
+        resolver: true
+      fromLocationContext:
+        resolver: true
+      toLocationContext:
+        resolver: true
+  Group:
+    fields:
+      locationContexts:
+        resolver: true
+  LocationContext:
+    fields:
+      group:
+        resolver: true
+      location:
+        resolver: true
+  Match:
+    fields:
+      ride:
+        resolver: true
+      rider:
+        resolver: true
+      driver:
+        resolver: true

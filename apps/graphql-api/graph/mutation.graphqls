@@ -1,0 +1,52 @@
+input CreateRideInput {
+  groupId: UUID!
+  type: RideType!
+  fromLocationContextId: UUID
+  toLocationContextId: UUID
+  fromLocationText: String
+  toLocationText: String
+  departureTime: Time
+  isImmediate: Boolean!
+  cost: Float
+  currency: String
+  distance: Float
+  seatsAvailable: Int
+}
+
+input UpdateRideInput {
+  departureTime: Time
+  cost: Float
+  seatsAvailable: Int
+}
+
+input UpsertUserInput {
+  name: String!
+  phone: String
+  role: UserRole
+  avatarUrl: String
+}
+
+input CreateGroupInput {
+  name: String!
+  description: String
+}
+
+input UpsertLocationContextInput {
+  groupId: UUID!
+  locationAlias: String!
+  locationName: String!
+  locationId: UUID!
+}
+
+type Mutation {
+  upsertUser(input: UpsertUserInput!): User!
+  createRide(input: CreateRideInput!): Ride!
+  updateRide(id: UUID!, input: UpdateRideInput!): Ride!
+  cancelRide(id: UUID!): Ride!
+  acceptMatch(rideId: UUID!): Match!
+  rejectMatch(matchId: UUID!): Match!
+  completeMatch(matchId: UUID!): Match!
+  cancelMatch(matchId: UUID!): Match!
+  createGroup(input: CreateGroupInput!): Group!
+  upsertLocationContext(input: UpsertLocationContextInput!): LocationContext!
+}

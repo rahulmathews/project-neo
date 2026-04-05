@@ -1,0 +1,76 @@
+scalar UUID
+scalar Time
+
+enum UserRole { RIDER DRIVER BOTH }
+enum RideType { NEED_RIDE RIDE_AVAILABLE }
+enum RideStatus { AVAILABLE MATCHED COMPLETED CANCELLED EXPIRED }
+enum MatchStatus { PENDING ACCEPTED REJECTED COMPLETED CANCELLED }
+
+type User {
+  id: UUID!
+  email: String
+  phone: String
+  name: String!
+  role: UserRole!
+  avatarUrl: String
+  createdAt: Time!
+}
+
+type Location {
+  id: UUID!
+  name: String!
+  latitude: Float!
+  longitude: Float!
+  address: String
+  city: String
+  state: String
+  country: String
+}
+
+type LocationContext {
+  id: UUID!
+  group: Group!
+  locationAlias: String!
+  locationName: String!
+  location: Location
+}
+
+type Group {
+  id: UUID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  locationContexts: [LocationContext!]!
+  createdAt: Time!
+}
+
+type Ride {
+  id: UUID!
+  group: Group!
+  type: RideType!
+  fromLocationContext: LocationContext
+  toLocationContext: LocationContext
+  fromLocationText: String
+  toLocationText: String
+  departureTime: Time
+  isImmediate: Boolean!
+  cost: Float
+  currency: String!
+  distance: Float
+  seatsAvailable: Int
+  status: RideStatus!
+  postedBy: User
+  createdAt: Time!
+}
+
+type Match {
+  id: UUID!
+  ride: Ride!
+  rider: User!
+  driver: User!
+  status: MatchStatus!
+  matchedAt: Time!
+  acceptedAt: Time
+  completedAt: Time
+  cancelledAt: Time
+}
