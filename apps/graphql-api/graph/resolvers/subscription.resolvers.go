@@ -7,26 +7,108 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
-	"project-neo/graphql-api/graph/generated"
-	model1 "project-neo/graphql-api/internal/model"
 
 	"github.com/google/uuid"
+	"project-neo/graphql-api/graph/generated"
+	"project-neo/graphql-api/internal/auth"
+	model1 "project-neo/graphql-api/internal/model"
 )
 
 // RideAdded is the resolver for the rideAdded field.
 func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: RideAdded - rideAdded"))
+	if _, err := auth.UserIDFromCtx(ctx); err != nil {
+		return nil, err
+	}
+	ch := make(chan *model1.Ride, 4)
+	events, cancel := r.Resolver.Broker.SubscribeRideAdded()
+
+	go func() {
+		defer cancel()
+		defer close(ch)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e, ok := <-events:
+				if !ok {
+					return
+				}
+				if e.GroupID == groupID.String() {
+					select {
+					case ch <- e.Ride:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+	return ch, nil
 }
 
 // RideStatusChanged is the resolver for the rideStatusChanged field.
 func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
-	panic(fmt.Errorf("not implemented: RideStatusChanged - rideStatusChanged"))
+	if _, err := auth.UserIDFromCtx(ctx); err != nil {
+		return nil, err
+	}
+	ch := make(chan *model1.Ride, 4)
+	events, cancel := r.Resolver.Broker.SubscribeRideUpdated()
+
+	go func() {
+		defer cancel()
+		defer close(ch)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e, ok := <-events:
+				if !ok {
+					return
+				}
+				if e.GroupID == groupID.String() {
+					select {
+					case ch <- e.Ride:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+	return ch, nil
 }
 
 // MatchStatusChanged is the resolver for the matchStatusChanged field.
 func (r *subscriptionResolver) MatchStatusChanged(ctx context.Context) (<-chan *model1.Match, error) {
-	panic(fmt.Errorf("not implemented: MatchStatusChanged - matchStatusChanged"))
+	userID, err := auth.UserIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ch := make(chan *model1.Match, 4)
+	events, cancel := r.Resolver.Broker.SubscribeMatchUpdated()
+
+	go func() {
+		defer cancel()
+		defer close(ch)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case m, ok := <-events:
+				if !ok {
+					return
+				}
+				if m.RiderID == userID || m.DriverID == userID {
+					select {
+					case ch <- m:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+	return ch, nil
 }
 
 // Subscription returns generated.SubscriptionResolver implementation.
