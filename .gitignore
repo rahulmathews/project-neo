@@ -67,6 +67,9 @@ out/
 *.jks
 *.keystore
 
+# Git worktrees
+.worktrees/
+
 # Supabase
 .branches
 .temp
