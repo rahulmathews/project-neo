@@ -4,14 +4,14 @@ create extension if not exists "uuid-ossp";
 -- ============================================================
 -- users
 -- ============================================================
-create type user_role as enum ('rider', 'driver', 'both');
+create type user_role as enum ('RIDER', 'DRIVER', 'BOTH');
 
 create table users (
   id          uuid primary key default uuid_generate_v4(),
   email       text unique,
   phone       text unique,
   name        text not null,
-  role        user_role not null default 'both',
+  role        user_role not null default 'BOTH',
   avatar_url  text,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
@@ -49,7 +49,7 @@ create table locations (
 -- ============================================================
 -- group_sources
 -- ============================================================
-create type source_type as enum ('whatsapp', 'telegram', 'discord', 'slack', 'manual');
+create type source_type as enum ('WHATSAPP', 'TELEGRAM', 'DISCORD', 'SLACK', 'MANUAL');
 
 create table group_sources (
   id                uuid primary key default uuid_generate_v4(),
@@ -82,7 +82,7 @@ create table location_contexts (
 -- ============================================================
 -- messages
 -- ============================================================
-create type parse_status as enum ('pending', 'success', 'failed', 'skipped');
+create type parse_status as enum ('PENDING', 'SUCCESS', 'FAILED', 'SKIPPED');
 
 create table messages (
   id                uuid primary key default uuid_generate_v4(),
@@ -92,7 +92,7 @@ create table messages (
   content           text not null,
   timestamp         timestamptz not null,
   parsed_at         timestamptz,
-  parse_status      parse_status not null default 'pending',
+  parse_status      parse_status not null default 'PENDING',
   parse_error       text,
   metadata          jsonb not null default '{}',
   created_at        timestamptz not null default now(),
@@ -102,8 +102,8 @@ create table messages (
 -- ============================================================
 -- rides
 -- ============================================================
-create type ride_type as enum ('need_ride', 'ride_available');
-create type ride_status as enum ('available', 'matched', 'completed', 'cancelled', 'expired');
+create type ride_type as enum ('NEED_RIDE', 'RIDE_AVAILABLE');
+create type ride_status as enum ('AVAILABLE', 'MATCHED', 'COMPLETED', 'CANCELLED', 'EXPIRED');
 
 create table rides (
   id                 uuid primary key default uuid_generate_v4(),
@@ -120,7 +120,7 @@ create table rides (
   currency           text not null default 'USD',
   distance           numeric(10, 2), -- km
   seats_available    integer,
-  status             ride_status not null default 'available',
+  status             ride_status not null default 'AVAILABLE',
   poster_user_id     uuid references users (id) on delete set null,
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
@@ -129,14 +129,14 @@ create table rides (
 -- ============================================================
 -- matches
 -- ============================================================
-create type match_status as enum ('pending', 'accepted', 'rejected', 'completed', 'cancelled');
+create type match_status as enum ('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED');
 
 create table matches (
   id           uuid primary key default uuid_generate_v4(),
   ride_id      uuid not null references rides (id) on delete cascade,
   rider_id     uuid not null references users (id) on delete cascade,
   driver_id    uuid not null references users (id) on delete cascade,
-  status       match_status not null default 'pending',
+  status       match_status not null default 'PENDING',
   matched_at   timestamptz not null default now(),
   accepted_at  timestamptz,
   completed_at timestamptz,
