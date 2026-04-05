@@ -13,12 +13,13 @@ services:
 
   graphql-api:
     build:
-      context: ./packages/graphql-api
+      context: ./apps/graphql-api
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
     networks:
       - neo-network
     restart: unless-stopped
