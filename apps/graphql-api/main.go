@@ -1,43 +1,76 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"project-neo/graphql-api/graph"
 	"project-neo/graphql-api/graph/generated"
+	"project-neo/graphql-api/graph/resolvers"
+	"project-neo/graphql-api/internal/auth"
+	"project-neo/graphql-api/internal/postgres"
 )
-
-func healthHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
-}
 
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("SUPABASE_JWT_SECRET is required")
+	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL != "" {
-		log.Printf("DATABASE_URL configured")
+	db, err := postgres.NewDB(dsn)
+	if err != nil {
+		log.Fatalf("connect to database: %v", err)
+	}
+	defer db.Close()
+
+	broker := postgres.NewBroker()
+
+	rideRepo := postgres.NewRideRepository(db)
+	matchRepo := postgres.NewMatchRepository(db)
+
+	// Start LISTEN/NOTIFY listener in background — receives repo interfaces, not concrete types
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go postgres.StartListener(ctx, dsn, rideRepo, matchRepo, broker)
+
+	resolver := &resolvers.Resolver{
+		Users:     postgres.NewUserRepository(db),
+		Rides:     rideRepo,
+		Matches:   matchRepo,
+		Groups:    postgres.NewGroupRepository(db),
+		Locations: postgres.NewLocationRepository(db),
+		Broker:    broker,
 	}
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
-		Resolvers: &graph.Resolver{},
+		Resolvers: resolver,
 	}))
+	// Enable WebSocket transport for subscriptions
+	srv.AddTransport(transport.Websocket{})
 
-	http.Handle("/", playground.Handler("GraphQL Playground", "/query"))
-	http.Handle("/query", srv)
-	http.HandleFunc("/health", healthHandler)
+	mux := http.NewServeMux()
+	mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
+	mux.Handle("/query", auth.Middleware(jwtSecret)(srv))
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
+	})
 
 	log.Printf("graphql-api listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }
