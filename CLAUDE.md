@@ -23,9 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Node.js 24.14.0 installed via nvm but needs activation in new shells
    - **Action required:** Run `nvm use 24.14.0` in each new terminal
 
-2. **Database migrations not yet written:**
-   - `supabase/migrations/` is empty — schema exists in models but no SQL migration files
-   - **Action required:** Write migration files before `supabase db push` will do anything
+2. **Database migrations are written and ready:**
+   - `supabase/migrations/` has two files covering all 8 tables, RLS, triggers, and indexes
+   - Run `supabase start` (local) or `supabase db push` to apply them
 
 ---
 

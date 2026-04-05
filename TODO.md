@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 5, 2026
+**Last Updated**: April 5, 2026 (session 2)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -61,20 +61,16 @@
 - [x] Initialize Supabase locally (`supabase init`)
 - [x] Design database schema (8 tables — models exist in shared-go)
 
+### ✅ Completed — Supabase Migrations
+- [x] Write SQL migration files
+  - [x] `20260331000000_baseline.sql` — all 8 tables (users, groups, group_sources, location_contexts, messages, rides, matches, locations)
+  - [x] `20260404000000_notify_triggers.sql` — NOTIFY triggers for GraphQL subscriptions
+- [x] Set up Row Level Security (RLS) policies
+- [x] Add updated_at triggers
+- [x] Add NOTIFY triggers for GraphQL subscriptions (`rides_added`, `rides_updated`, `matches_updated`)
+- [x] Add indexes for query performance
+
 ### 📋 Supabase Pending
-- [ ] Write SQL migration files (`supabase/migrations/` is currently empty)
-  - [ ] users table
-  - [ ] groups table
-  - [ ] group_sources table
-  - [ ] location_contexts table
-  - [ ] messages table
-  - [ ] rides table
-  - [ ] matches table
-  - [ ] locations table
-- [ ] Set up Row Level Security (RLS) policies
-- [ ] Add updated_at triggers
-- [ ] Add NOTIFY triggers for GraphQL subscriptions (`rides_added`, `rides_updated`, `matches_updated`)
-- [ ] Add indexes for query performance
 - [ ] Configure Auth providers
 - [ ] Add database seed data for development
 
@@ -214,9 +210,6 @@
 
 ## Current Status Summary
 
-**Blocker**: `supabase/migrations/` is empty — the app cannot run end-to-end until SQL migrations are written and `supabase db push` is run.
-
 **Next Immediate Tasks**:
-1. Write SQL migrations for all 8 tables (with triggers and indexes)
-2. Implement message source connectors + parser in workers service
-3. Begin Flutter mobile app scaffold (`apps/mobile`)
+1. Implement message source connectors + parser in workers service
+2. Begin Flutter mobile app scaffold (`apps/mobile`)
