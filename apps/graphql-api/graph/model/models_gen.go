@@ -2,87 +2,11 @@
 
 package model
 
-import (
-	"project-neo/graphql-api/internal/model"
-	"time"
-
-	"github.com/google/uuid"
-)
-
-type Group struct {
-	ID               uuid.UUID          `json:"id"`
-	Name             string             `json:"name"`
-	Description      *string            `json:"description,omitempty"`
-	IsActive         bool               `json:"isActive"`
-	LocationContexts []*LocationContext `json:"locationContexts"`
-	CreatedAt        time.Time          `json:"createdAt"`
-}
-
-type Location struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Latitude  float64   `json:"latitude"`
-	Longitude float64   `json:"longitude"`
-	Address   *string   `json:"address,omitempty"`
-	City      *string   `json:"city,omitempty"`
-	State     *string   `json:"state,omitempty"`
-	Country   *string   `json:"country,omitempty"`
-}
-
-type LocationContext struct {
-	ID            uuid.UUID `json:"id"`
-	Group         *Group    `json:"group"`
-	LocationAlias string    `json:"locationAlias"`
-	LocationName  string    `json:"locationName"`
-	Location      *Location `json:"location,omitempty"`
-}
-
-type Match struct {
-	ID          uuid.UUID         `json:"id"`
-	Ride        *Ride             `json:"ride"`
-	Rider       *User             `json:"rider"`
-	Driver      *User             `json:"driver"`
-	Status      model.MatchStatus `json:"status"`
-	MatchedAt   time.Time         `json:"matchedAt"`
-	AcceptedAt  *time.Time        `json:"acceptedAt,omitempty"`
-	CompletedAt *time.Time        `json:"completedAt,omitempty"`
-	CancelledAt *time.Time        `json:"cancelledAt,omitempty"`
-}
-
 type Mutation struct {
 }
 
 type Query struct {
 }
 
-type Ride struct {
-	ID                  uuid.UUID        `json:"id"`
-	Group               *Group           `json:"group"`
-	Type                model.RideType   `json:"type"`
-	FromLocationContext *LocationContext `json:"fromLocationContext,omitempty"`
-	ToLocationContext   *LocationContext `json:"toLocationContext,omitempty"`
-	FromLocationText    *string          `json:"fromLocationText,omitempty"`
-	ToLocationText      *string          `json:"toLocationText,omitempty"`
-	DepartureTime       *time.Time       `json:"departureTime,omitempty"`
-	IsImmediate         bool             `json:"isImmediate"`
-	Cost                *float64         `json:"cost,omitempty"`
-	Currency            string           `json:"currency"`
-	Distance            *float64         `json:"distance,omitempty"`
-	SeatsAvailable      *int             `json:"seatsAvailable,omitempty"`
-	Status              model.RideStatus `json:"status"`
-	PostedBy            *User            `json:"postedBy,omitempty"`
-	CreatedAt           time.Time        `json:"createdAt"`
-}
-
 type Subscription struct {
-}
-
-type User struct {
-	ID        uuid.UUID      `json:"id"`
-	Email     *string        `json:"email,omitempty"`
-	Phone     *string        `json:"phone,omitempty"`
-	Name      string         `json:"name"`
-	Role      model.UserRole `json:"role"`
-	AvatarURL *string        `json:"avatarUrl,omitempty"`
-	CreatedAt time.Time      `json:"createdAt"`
 }

@@ -1,14 +1,26 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
 
-// Stub types — replaced with full implementations in a later task.
-// These exist so gqlgen can resolve type references during code generation.
+	"github.com/google/uuid"
+)
 
-type UserRole string
-type RideType string
-type RideStatus string
-type MatchStatus string
+type Pagination struct {
+	Limit  int
+	Offset int
+}
+
+func NewPagination(limit, offset *int) Pagination {
+	p := Pagination{Limit: 20, Offset: 0}
+	if limit != nil && *limit > 0 && *limit <= 100 {
+		p.Limit = *limit
+	}
+	if offset != nil && *offset >= 0 {
+		p.Offset = *offset
+	}
+	return p
+}
 
 type UpsertUserInput struct {
 	Name      string
@@ -24,7 +36,7 @@ type CreateRideInput struct {
 	ToLocationContextID   *uuid.UUID
 	FromLocationText      *string
 	ToLocationText        *string
-	DepartureTime         *string
+	DepartureTime         *time.Time
 	IsImmediate           bool
 	Cost                  *float64
 	Currency              *string
@@ -33,7 +45,7 @@ type CreateRideInput struct {
 }
 
 type UpdateRideInput struct {
-	DepartureTime  *string
+	DepartureTime  *time.Time
 	Cost           *float64
 	SeatsAvailable *int
 }

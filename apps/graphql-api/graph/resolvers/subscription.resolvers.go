@@ -9,23 +9,23 @@ import (
 	"context"
 	"fmt"
 	"project-neo/graphql-api/graph/generated"
-	"project-neo/graphql-api/graph/model"
+	model1 "project-neo/graphql-api/internal/model"
 
 	"github.com/google/uuid"
 )
 
 // RideAdded is the resolver for the rideAdded field.
-func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID) (<-chan *model.Ride, error) {
+func (r *subscriptionResolver) RideAdded(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
 	panic(fmt.Errorf("not implemented: RideAdded - rideAdded"))
 }
 
 // RideStatusChanged is the resolver for the rideStatusChanged field.
-func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uuid.UUID) (<-chan *model.Ride, error) {
+func (r *subscriptionResolver) RideStatusChanged(ctx context.Context, groupID uuid.UUID) (<-chan *model1.Ride, error) {
 	panic(fmt.Errorf("not implemented: RideStatusChanged - rideStatusChanged"))
 }
 
 // MatchStatusChanged is the resolver for the matchStatusChanged field.
-func (r *subscriptionResolver) MatchStatusChanged(ctx context.Context) (<-chan *model.Match, error) {
+func (r *subscriptionResolver) MatchStatusChanged(ctx context.Context) (<-chan *model1.Match, error) {
 	panic(fmt.Errorf("not implemented: MatchStatusChanged - matchStatusChanged"))
 }
 

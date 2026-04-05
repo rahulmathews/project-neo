@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"project-neo/graphql-api/graph/generated"
-	"project-neo/graphql-api/graph/model"
 	model1 "project-neo/graphql-api/internal/model"
 
 	"github.com/google/uuid"
@@ -21,42 +20,42 @@ func (r *queryResolver) Health(ctx context.Context) (string, error) {
 }
 
 // Me is the resolver for the me field.
-func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+func (r *queryResolver) Me(ctx context.Context) (*model1.User, error) {
 	panic(fmt.Errorf("not implemented: Me - me"))
 }
 
 // Rides is the resolver for the rides field.
-func (r *queryResolver) Rides(ctx context.Context, groupID uuid.UUID, typeArg *model1.RideType, status *model1.RideStatus, limit *int, offset *int) ([]*model.Ride, error) {
+func (r *queryResolver) Rides(ctx context.Context, groupID uuid.UUID, typeArg *model1.RideType, status *model1.RideStatus, limit *int, offset *int) ([]*model1.Ride, error) {
 	panic(fmt.Errorf("not implemented: Rides - rides"))
 }
 
 // Ride is the resolver for the ride field.
-func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*model.Ride, error) {
+func (r *queryResolver) Ride(ctx context.Context, id uuid.UUID) (*model1.Ride, error) {
 	panic(fmt.Errorf("not implemented: Ride - ride"))
 }
 
 // MyRides is the resolver for the myRides field.
-func (r *queryResolver) MyRides(ctx context.Context, limit *int, offset *int) ([]*model.Ride, error) {
+func (r *queryResolver) MyRides(ctx context.Context, limit *int, offset *int) ([]*model1.Ride, error) {
 	panic(fmt.Errorf("not implemented: MyRides - myRides"))
 }
 
 // MyMatches is the resolver for the myMatches field.
-func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) ([]*model.Match, error) {
+func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) ([]*model1.Match, error) {
 	panic(fmt.Errorf("not implemented: MyMatches - myMatches"))
 }
 
 // Groups is the resolver for the groups field.
-func (r *queryResolver) Groups(ctx context.Context) ([]*model.Group, error) {
+func (r *queryResolver) Groups(ctx context.Context) ([]*model1.Group, error) {
 	panic(fmt.Errorf("not implemented: Groups - groups"))
 }
 
 // Group is the resolver for the group field.
-func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*model.Group, error) {
+func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*model1.Group, error) {
 	panic(fmt.Errorf("not implemented: Group - group"))
 }
 
 // Locations is the resolver for the locations field.
-func (r *queryResolver) Locations(ctx context.Context, query string) ([]*model.Location, error) {
+func (r *queryResolver) Locations(ctx context.Context, query string) ([]*model1.Location, error) {
 	panic(fmt.Errorf("not implemented: Locations - locations"))
 }
 
