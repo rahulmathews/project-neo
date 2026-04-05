@@ -26,6 +26,7 @@ func NewDB(dsn string) (*bun.DB, error) {
 	)
 
 	if err := db.Ping(); err != nil {
+		_ = sqldb.Close()
 		return nil, fmt.Errorf("postgres ping: %w", err)
 	}
 

@@ -15,7 +15,7 @@ import (
 )
 
 // Health is the resolver for the health field.
-func (r *queryResolver) Health(ctx context.Context) (string, error) {
+func (r *queryResolver) Health(_ context.Context) (string, error) {
 	return "ok", nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -35,7 +36,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("connect to database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("close database: %v", err)
+		}
+	}()
 
 	broker := ipostgres.NewBroker()
 
@@ -56,18 +61,23 @@ func main() {
 		Broker:    broker,
 	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
-	// Enable WebSocket transport for subscriptions
-	srv.AddTransport(transport.Websocket{})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+	})
 
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
 	mux.Handle("/query", auth.Middleware(jwtSecret)(srv))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
+		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
 	})
 
 	log.Printf("graphql-api listening on :%s", port)

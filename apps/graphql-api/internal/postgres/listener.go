@@ -35,7 +35,9 @@ func StartListener(ctx context.Context, dsn string, rides repository.RideReposit
 	for {
 		select {
 		case <-ctx.Done():
-			listener.Close()
+			if err := listener.Close(); err != nil {
+				log.Printf("close listener: %v", err)
+			}
 			return
 		case n := <-listener.Notify:
 			if n == nil {
