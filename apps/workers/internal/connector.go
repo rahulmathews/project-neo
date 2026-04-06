@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"project-neo/workers/internal/store"
+	sharedpostgres "project-neo/shared/postgres"
 	"project-neo/workers/whatsapp"
 
 	"github.com/uptrace/bun"
@@ -17,22 +17,13 @@ type Connector interface {
 	Stop() // blocks until all in-flight handlers complete
 }
 
-// NewConnectors reads all active WHATSAPP group_sources from the DB and returns
-// one Connector that listens to all of them. If no sources are configured,
-// an empty slice is returned with no error.
+// NewConnectors creates all platform connectors. The WhatsApp connector is always
+// started — it handles QR pairing on first run and silent session resume thereafter.
 func NewConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *slog.Logger) ([]Connector, error) {
-	reader := store.NewGroupSourceReader(bunDB, logger)
-	sources, err := reader.ListActiveWhatsApp(ctx)
-	if err != nil {
-		return nil, err
-	}
+	groupStore := sharedpostgres.NewGroupStore(bunDB)
+	groupSourceStore := sharedpostgres.NewGroupSourceStore(bunDB)
 
-	if len(sources) == 0 {
-		logger.Info("no active WhatsApp sources found — connector not started")
-		return nil, nil
-	}
-
-	c, err := whatsapp.NewClient(ctx, sources, bunDB, sqlDB, logger)
+	c, err := whatsapp.NewClient(ctx, groupStore, groupSourceStore, bunDB, sqlDB, logger)
 	if err != nil {
 		return nil, err
 	}

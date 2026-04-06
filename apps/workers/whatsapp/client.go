@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"project-neo/shared/model"
+	sharedpostgres "project-neo/shared/postgres"
 	"project-neo/workers/internal/store"
 
 	"github.com/google/uuid"
@@ -28,22 +29,17 @@ type Client struct {
 	wg      *sync.WaitGroup
 }
 
-// NewClient creates a whatsmeow client that listens to all provided group sources.
+// NewClient creates a whatsmeow client, connects to WhatsApp (QR on first run, silent
+// resume on subsequent runs), discovers all joined groups, syncs them to the database,
+// and starts listening for messages.
 func NewClient(
 	ctx context.Context,
-	srcs []*model.GroupSource,
+	groupStore *sharedpostgres.GroupStore,
+	groupSourceStore *sharedpostgres.GroupSourceStore,
 	bunDB *bun.DB,
 	sqlDB *sql.DB,
 	logger *slog.Logger,
 ) (*Client, error) {
-	// Build JID → group_id and JID → source_id maps from group_sources.
-	jidMap := make(map[string]uuid.UUID, len(srcs))
-	srcMap := make(map[string]uuid.UUID, len(srcs))
-	for _, s := range srcs {
-		jidMap[s.SourceIdentifier] = s.GroupID
-		srcMap[s.SourceIdentifier] = s.ID
-	}
-
 	// Initialise the whatsmeow Postgres session store.
 	container := sqlstore.NewWithDB(sqlDB, "postgres", waLog.Noop)
 
@@ -56,25 +52,10 @@ func NewClient(
 	// Anti-detection: disable automatic missed-message requests on reconnect.
 	wac.AutomaticMessageRerequestFromPhone = false
 
-	msgWriter := store.NewMessageWriter(bunDB, logger)
-	srcReader := store.NewGroupSourceReader(bunDB, logger)
-
 	wg := &sync.WaitGroup{}
+	c := &Client{wac: wac, logger: logger, wg: wg}
 
-	c := &Client{
-		wac:     wac,
-		logger:  logger,
-		wg:      wg,
-		handler: NewHandler(jidMap, srcMap, msgWriter, srcReader, logger, wg),
-	}
-
-	// Register event handler — ctx is the application root context.
-	wac.AddEventHandler(func(evt interface{}) {
-		if msg, ok := evt.(*events.Message); ok {
-			c.handler.Handle(ctx, msg)
-		}
-	})
-
+	// Connect first — QR flow or silent session resume.
 	if err := c.connect(ctx); err != nil {
 		return nil, err
 	}
@@ -84,8 +65,64 @@ func NewClient(
 		logger.Warn("failed to set presence unavailable", "error", err)
 	}
 
-	logger.Info("whatsapp connector started", "groups", len(srcs))
+	// Discover all joined groups and sync to the database.
+	jidMap, srcMap, err := c.syncGroups(ctx, groupStore, groupSourceStore)
+	if err != nil {
+		return nil, fmt.Errorf("sync groups: %w", err)
+	}
+
+	msgWriter := store.NewMessageWriter(bunDB, logger)
+	srcReader := store.NewGroupSourceReader(bunDB, logger)
+
+	c.handler = NewHandler(jidMap, srcMap, msgWriter, srcReader, logger, wg)
+
+	// Register event handler — ctx is the application root context.
+	wac.AddEventHandler(func(evt any) {
+		if msg, ok := evt.(*events.Message); ok {
+			c.handler.Handle(ctx, msg)
+		}
+	})
+
+	logger.Info("whatsapp connector started", "groups", len(jidMap))
 	return c, nil
+}
+
+// syncGroups fetches all WhatsApp groups the account is joined to, upserts them into
+// the database, and returns JID→groupID and JID→sourceID maps.
+func (c *Client) syncGroups(
+	ctx context.Context,
+	groupStore *sharedpostgres.GroupStore,
+	groupSourceStore *sharedpostgres.GroupSourceStore,
+) (jidMap map[string]uuid.UUID, srcMap map[string]uuid.UUID, err error) {
+	groups, err := c.wac.GetJoinedGroups(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get joined groups: %w", err)
+	}
+
+	jidMap = make(map[string]uuid.UUID, len(groups))
+	srcMap = make(map[string]uuid.UUID, len(groups))
+
+	for _, g := range groups {
+		jid := g.JID.String()
+
+		groupID, upsertErr := groupStore.UpsertGroup(ctx, g.Name)
+		if upsertErr != nil {
+			c.logger.Warn("failed to upsert group", "jid", jid, "name", g.Name, "error", upsertErr)
+			continue
+		}
+
+		sourceID, upsertErr := groupSourceStore.UpsertGroupSource(ctx, groupID, model.SourceTypeWhatsApp, jid)
+		if upsertErr != nil {
+			c.logger.Warn("failed to upsert group source", "jid", jid, "group_id", groupID, "error", upsertErr)
+			continue
+		}
+
+		jidMap[jid] = groupID
+		srcMap[jid] = sourceID
+	}
+
+	c.logger.Info("synced whatsapp groups", "count", len(jidMap))
+	return jidMap, srcMap, nil
 }
 
 // connect handles first-time QR flow or silent session resume.
