@@ -1,67 +1,134 @@
-# project-neo
+# Project Neo
 
-## Quick Start
+Ride-sharing app that sources ride requests and offers from messaging platform groups (WhatsApp, Telegram, etc.).
 
-### Prerequisites
+## Architecture
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started) — install via `scoop install supabase` or `winget install Supabase.CLI`
-- [Bun](https://bun.sh) v1.3.11+
-- [Go](https://golang.org) 1.24.4+
-
-### First-time setup
-
-```bash
-# Install JS dependencies
-bun install
-
-# Initialize Supabase (first time only)
-supabase init
-
-# Copy environment config
-cp .env.example .env
+```
+┌─────────────────────────────────────────────┐
+│  Message Sources (WhatsApp, Telegram, etc.) │
+└──────────┬──────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│      Workers        │
+│    (Go Binary)      │
+│  - Parse messages   │
+│  - Extract rides    │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  GraphQL API        │
+│    (Go - gqlgen)    │
+│  - Queries          │
+│  - Mutations        │
+│  - Subscriptions    │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Supabase (Local)   │
+│  - PostgreSQL       │
+│  - Realtime         │
+│  - Auth             │
+└─────────────────────┘
+           │
+           ▼
+┌─────────────────────┬─────────────────────┐
+│   Flutter Mobile    │      Web App        │
+│   (iOS + Android)   │   (Future Phase)    │
+└─────────────────────┴─────────────────────┘
 ```
 
-### Start the stack
+## Tech Stack
+
+| Service | Language / Framework |
+|---------|----------------------|
+| Workers | Go 1.25, whatsmeow, go-telegram-bot-api |
+| GraphQL API | Go 1.25, gqlgen, Bun ORM |
+| Shared library | Go 1.25 |
+| Database | Supabase (PostgreSQL + Realtime + Auth) |
+| Mobile | Flutter (Dart) |
+| Tooling | Bun, Turborepo, Biome |
+
+## Prerequisites
+
+- **Node.js 24.14.0** via nvm — run `nvm use 24.14.0` in each new shell
+- **Go 1.25+** — `go version`
+- **Bun 1.3.11+** — `bun --version`
+- **Flutter** — `flutter --version`
+- **Docker** with Docker Compose
+- **Supabase CLI** — `supabase --version`
+
+## Setup
 
 ```bash
-# Start Supabase (first run downloads images, ~2 min)
+# 1. Clone
+git clone <repo-url>
+cd project-neo
+
+# 2. Install JS tooling dependencies
+bun install
+
+# 3. Environment
+cp .env.example .env
+# Edit .env — fill in SUPABASE_JWT_SECRET after step 4
+```
+
+```bash
+# 4. Start Supabase (first run pulls images — ~2 min)
 supabase start
 
-# Start app services
+# Copy the "JWT secret" from the output above into SUPABASE_JWT_SECRET in .env
+# Or run: supabase status
+```
+
+```bash
+# 5. Start app services
 docker compose up -d --build
 ```
 
-### Verify everything is running
-
 ```bash
-curl http://localhost:8081/health
-# → {"status":"ok","service":"workers"}
-
-curl http://localhost:8080/health
-# → {"status":"ok","service":"graphql-api"}
-
-curl -X POST http://localhost:8080/query \
-  -H "Content-Type: application/json" \
-  -d '{"query":"{ health }"}'
-# → {"data":{"health":"ok"}}
+# 6. Verify
+curl http://localhost:8083/health    # → {"status":"ok","service":"workers"}
+curl http://localhost:8082/health    # → {"status":"ok","service":"graphql-api"}
 ```
 
-Open in browser:
-- GraphQL Playground: http://localhost:8080/
-- Supabase Studio: http://localhost:54323
+## Services
 
-### Stop
+| Service | Description | Port | README |
+|---------|-------------|------|--------|
+| workers | Connects to WhatsApp/Telegram, parses messages, extracts rides | 8083 | [apps/workers](apps/workers/README.md) |
+| graphql-api | GraphQL API for rides, matches, groups | 8082 | [apps/graphql-api](apps/graphql-api/README.md) |
+| shared-go | Shared Go models and repository interfaces | — | [packages/shared-go](packages/shared-go/README.md) |
+| supabase | Local PostgreSQL + Realtime + Auth | 54321 | [supabase](supabase/README.md) |
+| mobile | Flutter mobile app (iOS + Android) | — | not yet started |
+
+## Development Commands
 
 ```bash
-docker compose down
-supabase stop
+# Check formatting (JS/TS + Go)
+bun run format:check
+
+# Lint all code
+bun run lint
+
+# Build all packages
+bun run build
 ```
 
-### Development checks
+## Contributing
 
-```bash
-bun run format:check   # formatting
-bun run lint           # linting
-bun run build          # build all
-```
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
+**Format:** `type(scope): subject`
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `build`, `ci`, `chore`
+
+**Scopes:** `mobile`, `workers`, `graphql-api`, `database`, `shared`, `deps`, `release`, `docker`, `ci`, `docs`
+
+**Rules:**
+- Imperative mood: "add" not "added"
+- No attribution footers
+- Keep commits small and focused
