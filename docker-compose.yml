@@ -1,5 +1,8 @@
+name: neo
+
 services:
   workers:
+    container_name: workers_neo
     build:
       context: .
       dockerfile: apps/workers/Dockerfile
@@ -7,19 +10,22 @@ services:
       - "8083:8083"
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     networks:
       - neo-network
     restart: unless-stopped
 
   graphql-api:
+    container_name: graphql_api_neo
     build:
       context: .
       dockerfile: apps/graphql-api/Dockerfile
     ports:
-      - "8082:8080"
+      - "8082:8082"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - PORT=8082
     networks:
       - neo-network
     restart: unless-stopped
