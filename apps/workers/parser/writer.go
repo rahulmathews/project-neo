@@ -37,6 +37,7 @@ func writeRide(
 		Cost:             parsed.Cost,
 		Currency:         currencyOrDefault(parsed.Currency),
 		Distance:         parsed.Distance,
+		SeatsAvailable:   parsed.SeatsAvailable,
 		Status:           model.RideStatusAvailable,
 	}
 
