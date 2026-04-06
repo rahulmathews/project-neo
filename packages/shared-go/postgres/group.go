@@ -102,19 +102,20 @@ func NewGroupStore(db *bun.DB) *GroupStore {
 
 // UpsertGroup inserts a group by name, or returns the existing ID if one already exists.
 // Uses DO UPDATE SET name = EXCLUDED.name (no-op) so RETURNING id works on both paths.
+// Also reactivates the group (is_active = true) if it was previously deactivated.
 func (s *GroupStore) UpsertGroup(ctx context.Context, name string) (uuid.UUID, error) {
 	group := &model.Group{
 		ID:       uuid.New(),
 		Name:     name,
 		IsActive: true,
 	}
-	_, err := s.db.NewInsert().
+	if err := s.db.NewInsert().
 		Model(group).
 		On("CONFLICT (name) DO UPDATE").
 		Set("name = EXCLUDED.name").
+		Set("is_active = true").
 		Returning("id").
-		Exec(ctx)
-	if err != nil {
+		Scan(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("upsert group: %w", err)
 	}
 	return group.ID, nil
