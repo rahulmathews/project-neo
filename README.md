@@ -55,9 +55,9 @@ Ride-sharing app that sources ride requests and offers from messaging platform g
 ## Prerequisites
 
 - **Node.js 24.14.0** via nvm — run `nvm use 24.14.0` in each new shell
-- **Go 1.25+** — `go version`
-- **Bun 1.3.11+** — `bun --version`
-- **Flutter** — `flutter --version`
+- **Go 1.25+** — [golang.org/dl](https://golang.org/dl) — `go version`
+- **Bun 1.3.11+** — [bun.sh](https://bun.sh) — `bun --version`
+- **Flutter** — [flutter.dev](https://flutter.dev/docs/get-started/install) — `flutter --version`
 - **Docker** with Docker Compose
 - **Supabase CLI** — `supabase --version`
 
@@ -85,12 +85,17 @@ supabase start
 ```
 
 ```bash
-# 5. Start app services
+# 5. Apply database migrations
+supabase db push
+```
+
+```bash
+# 6. Start app services
 docker compose up -d --build
 ```
 
 ```bash
-# 6. Verify
+# 7. Verify
 curl http://localhost:8083/health    # → {"status":"ok","service":"workers"}
 curl http://localhost:8082/health    # → {"status":"ok","service":"graphql-api"}
 ```
@@ -102,12 +107,15 @@ curl http://localhost:8082/health    # → {"status":"ok","service":"graphql-api
 | workers | Connects to WhatsApp/Telegram, parses messages, extracts rides | 8083 | [apps/workers](apps/workers/README.md) |
 | graphql-api | GraphQL API for rides, matches, groups | 8082 | [apps/graphql-api](apps/graphql-api/README.md) |
 | shared-go | Shared Go models and repository interfaces | — | [packages/shared-go](packages/shared-go/README.md) |
-| supabase | Local PostgreSQL + Realtime + Auth | 54321 | [supabase](supabase/README.md) |
-| mobile | Flutter mobile app (iOS + Android) | — | not yet started |
+| supabase | Local PostgreSQL + Realtime + Auth + Studio (54323) | 54321 | [supabase](supabase/README.md) |
+| mobile | Flutter mobile app (iOS + Android) — not yet started | — | — |
 
 ## Development Commands
 
 ```bash
+# Run all services in dev mode
+bun run dev
+
 # Check formatting (JS/TS + Go)
 bun run format:check
 
