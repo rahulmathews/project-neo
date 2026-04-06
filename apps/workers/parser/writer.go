@@ -23,6 +23,19 @@ func writeRide(
 	toLocationID *uuid.UUID,
 	logger *slog.Logger,
 ) {
+	// Skip if a ride already exists for this content in this group (duplicate message).
+	var exists bool
+	if err := db.NewSelect().
+		TableExpr("rides AS r").
+		ColumnExpr("EXISTS (SELECT 1 FROM rides r2 JOIN messages m ON m.id = r2.message_id WHERE m.group_id = ? AND m.content_hash = ?)", msg.GroupID, msg.ContentHash).
+		Scan(ctx, &exists); err != nil {
+		logger.Warn("writer: duplicate check failed, proceeding", "msg_id", msg.ID, "error", err)
+	} else if exists {
+		logger.Info("writer: skipping duplicate ride (same content hash in group)", "msg_id", msg.ID)
+		markSuccess(ctx, db, msg.ID, logger)
+		return
+	}
+
 	ride := &model.Ride{
 		ID:               uuid.New(),
 		MessageID:        &msg.ID,
