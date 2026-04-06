@@ -17,7 +17,17 @@ var (
 	inTimeRe        = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
 	costRe          = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)`)
 	distanceRe      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
-	locationTrailRe = regexp.MustCompile(`(?i)\s+(?:at\s+\d+[:.]\d+|[@([]|\d+(?:\.\d+)?\s*(?:km|miles|mi)\b|[$₹£€]\d).*$`)
+	locationTrailRe = regexp.MustCompile(`(?i)\s+(?:` +
+		`at\s+\d+[:.]\d+` + // "at 3:30pm" or "at 3.30pm"
+		`|at\s+\d{1,2}\s+\d{2}\s*(?:am|pm)` + // "at 2 40pm" (malformed time with space)
+		`|[@([]` + // "@", "(", "["
+		`|\d+(?:\.\d+)?\s*(?:km|miles|mi|mile)\b` + // distance (added "mile" singular)
+		`|[$₹£€]\d` + // currency prefix
+		`|(?:today|tomorrow|tonight|yesterday)\b` + // temporal keywords
+		`|on\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d)` + // date phrase
+		`|for\s+\d+\s*(?:ppl|people|members?|persons?|passengers?)\b` + // seat phrasing
+		`|(?:anyone|going|available|open|free|ok|interested|still)\?` + // conversational trailers
+		`).*$`)
 )
 
 // cleanLocationText strips trailing time/cost/distance metadata absorbed into a location match.
