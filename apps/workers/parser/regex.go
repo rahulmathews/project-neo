@@ -10,14 +10,21 @@ import (
 )
 
 var (
-	rideTypeRe = regexp.MustCompile(`(?i)\b(need\s+ride|ride\s+available)\b`)
-	fromToRe   = regexp.MustCompile(`(?i)from\s+(.+?)\s+to\s+(.+?)(?:\n|$)`)
-	nowRe      = regexp.MustCompile(`(?i)\bnow\b`)
-	timeRe     = regexp.MustCompile(`(?i)\b(\d{1,2}:\d{2}\s*(?:AM|PM))\b`)
-	inTimeRe   = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
-	costRe     = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)`)
-	distanceRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
+	rideTypeRe      = regexp.MustCompile(`(?i)\b(need\s+ride|ride\s+available)\b`)
+	fromToRe        = regexp.MustCompile(`(?i)from\s+(.+?)\s+to\s+(.+?)(?:\n|$)`)
+	nowRe           = regexp.MustCompile(`(?i)\bnow\b`)
+	timeRe          = regexp.MustCompile(`(?i)\b(\d{1,2}:\d{2}\s*(?:AM|PM))\b`)
+	inTimeRe        = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
+	costRe          = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)`)
+	distanceRe      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
+	locationTrailRe = regexp.MustCompile(`(?i)\s+(?:at\s+\d+[:.]\d+|[@([]|\d+(?:\.\d+)?\s*(?:km|miles|mi)\b|[$₹£€]\d).*$`)
 )
+
+// cleanLocationText strips trailing time/cost/distance metadata absorbed into a location match.
+// e.g. "Royal Spices at 9:55am (2.5 miles $5)" → "Royal Spices"
+func cleanLocationText(s string) string {
+	return strings.TrimSpace(locationTrailRe.ReplaceAllString(s, ""))
+}
 
 // parseDepartureTime populates IsImmediate and DepartureTime on parsed from content.
 func parseDepartureTime(content string, parsed *ParsedRide) {
@@ -61,8 +68,8 @@ func extractWithRegex(content string) (*ParsedRide, bool) {
 
 	// From / To locations
 	if m := fromToRe.FindStringSubmatch(content); len(m) == 3 {
-		from := strings.TrimSpace(m[1])
-		to := strings.TrimSpace(m[2])
+		from := cleanLocationText(m[1])
+		to := cleanLocationText(m[2])
 		parsed.FromLocationText = &from
 		parsed.ToLocationText = &to
 	}
