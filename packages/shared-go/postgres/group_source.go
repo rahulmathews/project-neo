@@ -25,7 +25,7 @@ func (s *GroupSourceStore) ListActive(ctx context.Context, sourceType model.Sour
 	err := s.db.NewSelect().
 		Model(&sources).
 		Where("gs.source_type = ?", sourceType).
-		Where("gs.is_active = true").
+		Where("gs.is_active = ?", true).
 		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list active group sources: %w", err)
