@@ -51,6 +51,7 @@ func (w *MessageWriter) Write(
 	}
 
 	msg := &model.Message{
+		ID:               uuid.New(),
 		GroupID:          groupID,
 		SourceMessageID:  sourceMessageID,
 		SenderIdentifier: senderIdentifier,
