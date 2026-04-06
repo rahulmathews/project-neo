@@ -40,8 +40,11 @@ func NewClient(
 	sqlDB *sql.DB,
 	logger *slog.Logger,
 ) (*Client, error) {
-	// Initialise the whatsmeow Postgres session store.
+	// Initialise the whatsmeow Postgres session store and run schema migrations.
 	container := sqlstore.NewWithDB(sqlDB, "postgres", waLog.Noop)
+	if err := container.Upgrade(ctx); err != nil {
+		return nil, fmt.Errorf("whatsmeow db upgrade: %w", err)
+	}
 
 	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
