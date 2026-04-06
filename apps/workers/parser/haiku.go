@@ -5,12 +5,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"project-neo/shared/model"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
+
+var (
+	haikuClient     anthropic.Client
+	haikuClientOnce sync.Once
+)
+
+func getHaikuClient() (*anthropic.Client, error) {
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("ANTHROPIC_API_KEY not configured")
+	}
+	haikuClientOnce.Do(func() {
+		haikuClient = anthropic.NewClient(option.WithAPIKey(apiKey))
+	})
+	return &haikuClient, nil
+}
 
 type haikuResponse struct {
 	RideType          *string  `json:"ride_type"`
@@ -27,12 +44,10 @@ type haikuResponse struct {
 // Returns ErrNotARide if the message is not a ride request/offer.
 // Returns an error wrapping "ANTHROPIC_API_KEY not configured" if the key is missing.
 func extractWithHaiku(ctx context.Context, content string, groupName string) (*ParsedRide, error) {
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("ANTHROPIC_API_KEY not configured")
+	client, err := getHaikuClient()
+	if err != nil {
+		return nil, err
 	}
-
-	client := anthropic.NewClient(option.WithAPIKey(apiKey))
 
 	systemPrompt := fmt.Sprintf(`You are a ride-sharing message parser. Extract ride information from the message.
 Group context: %s

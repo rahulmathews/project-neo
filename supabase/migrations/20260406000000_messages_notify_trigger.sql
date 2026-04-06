@@ -8,6 +8,7 @@ begin
 end;
 $$;
 
+drop trigger if exists message_inserted_trigger on messages;
 create trigger message_inserted_trigger
   after insert on messages
   for each row execute function notify_message_inserted();
