@@ -26,6 +26,8 @@ func NewDB(dsn string) (*bun.DB, error) {
 		(*model.LocationContext)(nil),
 		(*model.Ride)(nil),
 		(*model.Match)(nil),
+		(*model.Message)(nil),
+		(*model.GroupSource)(nil),
 	)
 
 	if err := db.Ping(); err != nil {
