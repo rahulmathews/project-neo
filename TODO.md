@@ -113,6 +113,11 @@
 - [x] Extractor pipeline: regex → Haiku → location → write (`extractor.go`)
 - [x] pg_notify listener for message parser (`listener.go`)
 - [x] Wired message parser listener in `run.go`
+- [x] Fix departure time parsing (AM/PM case + dot separator)
+- [x] Fix to_location absorbing trailing temporal/seat/conversational text
+- [x] Fix cost parsing for trailing currency symbol (N$)
+- [x] Extract seats_available from messages
+- [x] Prevent duplicate rides for same content hash in group
 
 ### 📋 Workers Service — Pending
 - [ ] Set up additional message source connectors
