@@ -1,0 +1,86 @@
+package parser
+
+import (
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"project-neo/shared/model"
+)
+
+var (
+	rideTypeRe = regexp.MustCompile(`(?i)\b(need\s+ride|ride\s+available)\b`)
+	fromToRe   = regexp.MustCompile(`(?i)from\s+(.+?)\s+to\s+(.+?)(?:\n|$)`)
+	nowRe      = regexp.MustCompile(`(?i)\bnow\b`)
+	timeRe     = regexp.MustCompile(`(?i)\b(\d{1,2}:\d{2}\s*(?:AM|PM))\b`)
+	inTimeRe   = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
+	costRe     = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)`)
+	distanceRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
+)
+
+// extractWithRegex attempts structured extraction from content.
+// Returns (parsed, true) on a hit (ride type + at least one location found),
+// or (nil, false) on a miss.
+func extractWithRegex(content string) (*ParsedRide, bool) {
+	parsed := &ParsedRide{}
+
+	// Ride type
+	if m := rideTypeRe.FindString(content); m != "" {
+		if strings.Contains(strings.ToLower(m), "need") {
+			parsed.RideType = model.RideTypeNeedRide
+		} else {
+			parsed.RideType = model.RideTypeRideAvailable
+		}
+	}
+
+	// From / To locations
+	if m := fromToRe.FindStringSubmatch(content); len(m) == 3 {
+		from := strings.TrimSpace(m[1])
+		to := strings.TrimSpace(m[2])
+		parsed.FromLocationText = &from
+		parsed.ToLocationText = &to
+	}
+
+	// Departure time
+	if nowRe.MatchString(content) {
+		parsed.IsImmediate = true
+	} else if inTimeRe.MatchString(content) {
+		parsed.IsImmediate = false
+		// Relative time ("in 30 mins") — no absolute DepartureTime stored
+	} else if m := timeRe.FindString(content); m != "" {
+		parsed.IsImmediate = false
+		for _, layout := range []string{"3:04 PM", "3:04PM"} {
+			if t, err := time.Parse(layout, strings.TrimSpace(m)); err == nil {
+				now := time.Now()
+				dep := time.Date(now.Year(), now.Month(), now.Day(),
+					t.Hour(), t.Minute(), 0, 0, now.Location())
+				parsed.DepartureTime = &dep
+				break
+			}
+		}
+	}
+
+	// Cost
+	if m := costRe.FindStringSubmatch(content); m != nil {
+		raw := m[1]
+		if raw == "" {
+			raw = m[2]
+		}
+		if v, err := strconv.ParseFloat(raw, 64); err == nil {
+			parsed.Cost = &v
+		}
+	}
+
+	// Distance
+	if m := distanceRe.FindStringSubmatch(content); len(m) >= 2 {
+		if v, err := strconv.ParseFloat(m[1], 64); err == nil {
+			parsed.Distance = &v
+		}
+	}
+
+	// Hit = ride type AND at least one location
+	hit := parsed.RideType != "" &&
+		(parsed.FromLocationText != nil || parsed.ToLocationText != nil)
+	return parsed, hit
+}
