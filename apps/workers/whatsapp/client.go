@@ -92,38 +92,43 @@ func NewClient(
 
 // connect handles first-time QR flow or silent session resume.
 func (c *Client) connect(ctx context.Context) error {
-	if c.wac.Store.ID == nil {
-		// No stored session — need QR scan.
-		qrChan, _ := c.wac.GetQRChannel(ctx)
+	if c.wac.Store.ID != nil {
+		// Existing session — reconnect silently.
 		if err := c.wac.Connect(); err != nil {
-			return fmt.Errorf("whatsmeow connect: %w", err)
+			return fmt.Errorf("whatsmeow reconnect: %w", err)
 		}
-		timeout := time.After(60 * time.Second)
-		for {
-			select {
-			case evt, ok := <-qrChan:
-				if !ok {
-					return nil // connected successfully
-				}
-				if evt.Event == "code" {
-					fmt.Printf("\n=== WhatsApp QR for %s ===\n%s\n=========================\n\n", c.number, evt.Code)
-				} else if evt.Event == "success" {
-					return nil
-				} else if evt.Event == "timeout" || evt.Event == "error" {
-					return fmt.Errorf("QR scan failed (event: %s): restart the service and scan again", evt.Event)
-				}
-			case <-timeout:
-				return fmt.Errorf("QR scan timeout for %s: restart the service and scan within 60 seconds", c.number)
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
+		return nil
 	}
-	// Existing session — reconnect silently.
+	return c.connectWithQR(ctx)
+}
+
+// connectWithQR handles the first-time pairing flow by printing a QR code.
+func (c *Client) connectWithQR(ctx context.Context) error {
+	qrChan, _ := c.wac.GetQRChannel(ctx)
 	if err := c.wac.Connect(); err != nil {
-		return fmt.Errorf("whatsmeow reconnect: %w", err)
+		return fmt.Errorf("whatsmeow connect: %w", err)
 	}
-	return nil
+	timeout := time.After(60 * time.Second)
+	for {
+		select {
+		case evt, ok := <-qrChan:
+			if !ok {
+				return nil // connected successfully
+			}
+			switch evt.Event {
+			case "code":
+				fmt.Printf("\n=== WhatsApp QR for %s ===\n%s\n=========================\n\n", c.number, evt.Code)
+			case "success":
+				return nil
+			case "timeout", "error":
+				return fmt.Errorf("QR scan failed (event: %s): restart the service and scan again", evt.Event)
+			}
+		case <-timeout:
+			return fmt.Errorf("QR scan timeout for %s: restart the service and scan within 60 seconds", c.number)
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // Start is a no-op — connection is established in NewClient.

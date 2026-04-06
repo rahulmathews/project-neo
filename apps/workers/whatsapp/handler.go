@@ -65,7 +65,7 @@ func (h *Handler) process(evt *events.Message) {
 	}
 
 	// Anti-detection: random jitter 300ms–2s before writing to DB.
-	jitter := time.Duration(300+rand.IntN(1700)) * time.Millisecond
+	jitter := time.Duration(300+rand.IntN(1700)) * time.Millisecond //nolint:gosec
 	time.Sleep(jitter)
 
 	ctx := context.Background()
