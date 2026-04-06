@@ -47,7 +47,7 @@ func run() error {
 	if port == "" {
 		port = "8083"
 	}
-	srv := startHealthServer(port)
+	srv := startHealthServer(port, logger)
 
 	waitForShutdown(cancel, connectors, srv, logger)
 	return nil
@@ -65,7 +65,7 @@ func initDB(databaseURL string) (*bun.DB, *sql.DB, error) {
 func buildConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *slog.Logger) ([]workersinternal.Connector, error) {
 	connectors, err := workersinternal.NewConnectors(ctx, bunDB, sqlDB, logger)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("new connectors: %w", err)
 	}
 	for _, c := range connectors {
 		if err := c.Start(ctx); err != nil {
@@ -75,7 +75,7 @@ func buildConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *
 	return connectors, nil
 }
 
-func startHealthServer(port string) *http.Server {
+func startHealthServer(port string, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -89,9 +89,9 @@ func startHealthServer(port string) *http.Server {
 		IdleTimeout:  60 * time.Second,
 	}
 	go func() {
-		slog.Info("workers health server listening", "port", port)
+		logger.Info("workers health server listening", "port", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("health server error", "error", err)
+			logger.Error("health server error", "error", err)
 		}
 	}()
 	return srv
