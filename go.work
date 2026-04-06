@@ -1,7 +1,7 @@
 go 1.25.0
 
 use (
-	./apps/workers
 	./apps/graphql-api
+	./apps/workers
 	./packages/shared-go
 )
