@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"project-neo/workers/internal/store"
 
 	"github.com/google/uuid"
+	"github.com/mdp/qrterminal/v3"
 	"github.com/uptrace/bun"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -158,7 +160,9 @@ func (c *Client) connectWithQR(ctx context.Context) error {
 			}
 			switch evt.Event {
 			case "code":
-				fmt.Printf("\n=== WhatsApp QR ===\n%s\n==================\n\n", evt.Code)
+				fmt.Println("\n=== Scan with WhatsApp → Linked Devices → Link a Device ===")
+				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
+				fmt.Println("=============================================================\n")
 			case "success":
 				return nil
 			case "timeout", "error":
