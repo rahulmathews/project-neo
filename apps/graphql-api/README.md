@@ -45,7 +45,7 @@ Prerequisites: Go 1.25+, Supabase running (`supabase start`), `.env` configured.
 cd apps/graphql-api
 
 # Live reload (requires air — install via: make install-tools)
-air
+PORT=8082 air
 
 # Without live reload
 PORT=8082 go run .
