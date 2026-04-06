@@ -25,7 +25,7 @@ var (
 		`|\d+(?:\.\d+)?\s*(?:km|miles|mi|mile)\b` + // distance (added "mile" singular)
 		`|[$₹£€]\d` + // currency prefix
 		`|(?:today|tomorrow|tonight|yesterday)\b` + // temporal keywords
-		`|on\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d)` + // date phrase
+		`|on\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2})` + // date phrase
 		`|for\s+\d+\s*(?:ppl|people|members?|persons?|passengers?)\b` + // seat phrasing
 		`|(?:anyone|going|available|open|free|ok|interested|still)\?` + // conversational trailers
 		`).*$`)

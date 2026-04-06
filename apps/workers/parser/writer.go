@@ -25,6 +25,7 @@ func writeRide(
 ) {
 	// Skip if a ride already exists for this content in this group (duplicate message).
 	var exists bool
+	// raw SQL — 'm' is a local alias in this subquery, not the bun model alias ("msg")
 	if err := db.NewSelect().
 		ColumnExpr("EXISTS (SELECT 1 FROM rides r2 JOIN messages m ON m.id = r2.message_id WHERE m.group_id = ? AND m.content_hash = ?)", msg.GroupID, msg.ContentHash).
 		Scan(ctx, &exists); err != nil {
