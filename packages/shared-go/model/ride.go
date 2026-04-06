@@ -43,8 +43,8 @@ type Ride struct {
 	SeatsAvailable   *int       `bun:"seats_available"`
 	Status           RideStatus `bun:"status"`
 	PosterUserID     *uuid.UUID `bun:"poster_user_id,type:uuid"`
-	CreatedAt        time.Time  `bun:"created_at"`
-	UpdatedAt        time.Time  `bun:"updated_at"`
+	CreatedAt        time.Time  `bun:"created_at,nullzero"`
+	UpdatedAt        time.Time  `bun:"updated_at,nullzero"`
 }
 
 type RideFilter struct {

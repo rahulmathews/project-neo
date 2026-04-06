@@ -32,7 +32,7 @@ type Message struct {
 	ParsedAt         *time.Time  `bun:"parsed_at"`
 	ParseStatus      ParseStatus `bun:"parse_status"`
 	ParseError       *string     `bun:"parse_error"`
-	CreatedAt        time.Time   `bun:"created_at"`
+	CreatedAt        time.Time   `bun:"created_at,nullzero"`
 }
 
 // ComputeContentHash returns the SHA-256 hex digest of the trimmed message content.

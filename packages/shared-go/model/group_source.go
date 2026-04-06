@@ -27,6 +27,6 @@ type GroupSource struct {
 	LastParsedAt     *time.Time `bun:"last_parsed_at"`
 	ParseFrequency   int        `bun:"parse_frequency"`
 	IsActive         bool       `bun:"is_active"`
-	CreatedAt        time.Time  `bun:"created_at"`
-	UpdatedAt        time.Time  `bun:"updated_at"`
+	CreatedAt        time.Time  `bun:"created_at,nullzero"`
+	UpdatedAt        time.Time  `bun:"updated_at,nullzero"`
 }

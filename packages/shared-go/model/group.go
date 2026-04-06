@@ -14,6 +14,6 @@ type Group struct {
 	Name        string    `bun:"name"`
 	Description *string   `bun:"description"`
 	IsActive    bool      `bun:"is_active"`
-	CreatedAt   time.Time `bun:"created_at"`
-	UpdatedAt   time.Time `bun:"updated_at"`
+	CreatedAt   time.Time `bun:"created_at,nullzero"`
+	UpdatedAt   time.Time `bun:"updated_at,nullzero"`
 }

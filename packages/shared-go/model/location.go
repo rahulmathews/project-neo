@@ -18,8 +18,8 @@ type Location struct {
 	City      *string   `bun:"city"`
 	State     *string   `bun:"state"`
 	Country   *string   `bun:"country"`
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,nullzero"`
+	UpdatedAt time.Time `bun:"updated_at,nullzero"`
 }
 
 type LocationContext struct {
@@ -30,6 +30,6 @@ type LocationContext struct {
 	LocationAlias string     `bun:"location_alias"`
 	LocationName  string     `bun:"location_name"`
 	LocationID    *uuid.UUID `bun:"location_id,type:uuid"`
-	CreatedAt     time.Time  `bun:"created_at"`
-	UpdatedAt     time.Time  `bun:"updated_at"`
+	CreatedAt     time.Time  `bun:"created_at,nullzero"`
+	UpdatedAt     time.Time  `bun:"updated_at,nullzero"`
 }

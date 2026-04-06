@@ -25,10 +25,10 @@ type Match struct {
 	RiderID     uuid.UUID   `bun:"rider_id,type:uuid"`
 	DriverID    uuid.UUID   `bun:"driver_id,type:uuid"`
 	Status      MatchStatus `bun:"status"`
-	MatchedAt   time.Time   `bun:"matched_at"`
+	MatchedAt   time.Time   `bun:"matched_at,nullzero"`
 	AcceptedAt  *time.Time  `bun:"accepted_at"`
 	CompletedAt *time.Time  `bun:"completed_at"`
 	CancelledAt *time.Time  `bun:"cancelled_at"`
-	CreatedAt   time.Time   `bun:"created_at"`
-	UpdatedAt   time.Time   `bun:"updated_at"`
+	CreatedAt   time.Time   `bun:"created_at,nullzero"`
+	UpdatedAt   time.Time   `bun:"updated_at,nullzero"`
 }

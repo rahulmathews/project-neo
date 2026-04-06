@@ -24,6 +24,6 @@ type User struct {
 	Name      string    `bun:"name"`
 	Role      UserRole  `bun:"role"`
 	AvatarURL *string   `bun:"avatar_url"`
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,nullzero"`
+	UpdatedAt time.Time `bun:"updated_at,nullzero"`
 }
