@@ -118,6 +118,7 @@
 - [x] Fix cost parsing for trailing currency symbol (N$)
 - [x] Extract seats_available from messages
 - [x] Prevent duplicate rides for same content hash in group
+- [x] End-to-end verification (WhatsApp → pg_notify → parse → ride row confirmed working)
 
 ### 📋 Workers Service — Pending
 - [ ] Set up additional message source connectors
@@ -223,6 +224,5 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. Verify message parser end-to-end (WhatsApp message → pg_notify → regex/Haiku extract → ride row)
-2. Add error handling and retries for parser pipeline
-3. Begin Flutter mobile app scaffold (`apps/mobile`)
+1. Add error handling and retries for parser pipeline
+2. Begin Flutter mobile app scaffold (`apps/mobile`)
