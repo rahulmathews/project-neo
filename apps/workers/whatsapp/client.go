@@ -22,18 +22,15 @@ import (
 
 // Client implements internal.Connector for WhatsApp via whatsmeow.
 type Client struct {
-	number  string
 	wac     *whatsmeow.Client
 	handler *Handler
 	logger  *slog.Logger
 	wg      *sync.WaitGroup
 }
 
-// NewClient creates a whatsmeow client for the given phone number.
-// srcs are the group_sources rows this number should listen to.
+// NewClient creates a whatsmeow client that listens to all provided group sources.
 func NewClient(
 	ctx context.Context,
-	number string,
 	srcs []*model.GroupSource,
 	bunDB *bun.DB,
 	sqlDB *sql.DB,
@@ -65,17 +62,16 @@ func NewClient(
 	wg := &sync.WaitGroup{}
 
 	c := &Client{
-		number:  number,
 		wac:     wac,
 		logger:  logger,
 		wg:      wg,
 		handler: NewHandler(jidMap, srcMap, msgWriter, srcReader, logger, wg),
 	}
 
-	// Register event handler.
+	// Register event handler — ctx is the application root context.
 	wac.AddEventHandler(func(evt interface{}) {
 		if msg, ok := evt.(*events.Message); ok {
-			c.handler.Handle(msg)
+			c.handler.Handle(ctx, msg)
 		}
 	})
 
@@ -84,9 +80,11 @@ func NewClient(
 	}
 
 	// Anti-detection: set presence to unavailable immediately after connect.
-	_ = wac.SendPresence(ctx, types.PresenceUnavailable)
+	if err := wac.SendPresence(ctx, types.PresenceUnavailable); err != nil {
+		logger.Warn("failed to set presence unavailable", "error", err)
+	}
 
-	logger.Info("whatsapp connector started", "number", number, "groups", len(srcs))
+	logger.Info("whatsapp connector started", "groups", len(srcs))
 	return c, nil
 }
 
@@ -104,7 +102,10 @@ func (c *Client) connect(ctx context.Context) error {
 
 // connectWithQR handles the first-time pairing flow by printing a QR code.
 func (c *Client) connectWithQR(ctx context.Context) error {
-	qrChan, _ := c.wac.GetQRChannel(ctx)
+	qrChan, err := c.wac.GetQRChannel(ctx)
+	if err != nil {
+		return fmt.Errorf("get QR channel: %w", err)
+	}
 	if err := c.wac.Connect(); err != nil {
 		return fmt.Errorf("whatsmeow connect: %w", err)
 	}
@@ -117,14 +118,14 @@ func (c *Client) connectWithQR(ctx context.Context) error {
 			}
 			switch evt.Event {
 			case "code":
-				fmt.Printf("\n=== WhatsApp QR for %s ===\n%s\n=========================\n\n", c.number, evt.Code)
+				fmt.Printf("\n=== WhatsApp QR ===\n%s\n==================\n\n", evt.Code)
 			case "success":
 				return nil
 			case "timeout", "error":
 				return fmt.Errorf("QR scan failed (event: %s): restart the service and scan again", evt.Event)
 			}
 		case <-timeout:
-			return fmt.Errorf("QR scan timeout for %s: restart the service and scan within 60 seconds", c.number)
+			return fmt.Errorf("QR scan timeout: restart the service and scan within 60 seconds")
 		case <-ctx.Done():
 			return ctx.Err()
 		}

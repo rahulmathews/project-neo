@@ -43,15 +43,15 @@ func NewHandler(
 }
 
 // Handle processes a single WhatsApp message event.
-func (h *Handler) Handle(evt *events.Message) {
+func (h *Handler) Handle(ctx context.Context, evt *events.Message) {
 	h.wg.Add(1)
 	go func() {
 		defer h.wg.Done()
-		h.process(evt)
+		h.process(ctx, evt)
 	}()
 }
 
-func (h *Handler) process(evt *events.Message) {
+func (h *Handler) process(ctx context.Context, evt *events.Message) {
 	chatJID := evt.Info.Chat.String()
 
 	groupID, ok := h.jidMap[chatJID]
@@ -65,10 +65,8 @@ func (h *Handler) process(evt *events.Message) {
 	}
 
 	// Anti-detection: random jitter 300ms–2s before writing to DB.
-	jitter := time.Duration(300+rand.IntN(1700)) * time.Millisecond //nolint:gosec
+	jitter := time.Duration(300+rand.IntN(1700)) * time.Millisecond
 	time.Sleep(jitter)
-
-	ctx := context.Background()
 
 	msgID := evt.Info.ID
 	var sourceMessageID *string
@@ -76,11 +74,12 @@ func (h *Handler) process(evt *events.Message) {
 		sourceMessageID = &msgID
 	}
 
+	srcID := h.srcMap[chatJID]
 	sender := evt.Info.Sender.String()
 	stored, err := h.msgWriter.Write(
 		ctx,
 		groupID,
-		h.srcMap[chatJID],
+		srcID,
 		sourceMessageID,
 		&sender,
 		text,
@@ -100,7 +99,6 @@ func (h *Handler) process(evt *events.Message) {
 			"group_id", groupID,
 			"source_message_id", msgID,
 		)
-		srcID := h.srcMap[chatJID]
 		h.srcReader.TouchLastParsedAt(ctx, srcID)
 	}
 }

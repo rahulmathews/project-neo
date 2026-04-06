@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"project-neo/shared/model"
 	"project-neo/workers/internal/store"
 	"project-neo/workers/whatsapp"
 
@@ -18,8 +17,9 @@ type Connector interface {
 	Stop() // blocks until all in-flight handlers complete
 }
 
-// NewConnectors reads all active WHATSAPP group_sources from the DB, groups them by
-// source_identifier (phone number), and returns one Connector per unique number.
+// NewConnectors reads all active WHATSAPP group_sources from the DB and returns
+// one Connector that listens to all of them. If no sources are configured,
+// an empty slice is returned with no error.
 func NewConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *slog.Logger) ([]Connector, error) {
 	reader := store.NewGroupSourceReader(bunDB, logger)
 	sources, err := reader.ListActiveWhatsApp(ctx)
@@ -27,19 +27,14 @@ func NewConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *sl
 		return nil, err
 	}
 
-	// Group sources by phone number — one whatsmeow client per number.
-	byNumber := make(map[string][]*model.GroupSource)
-	for _, s := range sources {
-		byNumber[s.SourceIdentifier] = append(byNumber[s.SourceIdentifier], s)
+	if len(sources) == 0 {
+		logger.Info("no active WhatsApp sources found — connector not started")
+		return nil, nil
 	}
 
-	connectors := make([]Connector, 0, len(byNumber))
-	for number, srcs := range byNumber {
-		c, err := whatsapp.NewClient(ctx, number, srcs, bunDB, sqlDB, logger)
-		if err != nil {
-			return nil, err
-		}
-		connectors = append(connectors, c)
+	c, err := whatsapp.NewClient(ctx, sources, bunDB, sqlDB, logger)
+	if err != nil {
+		return nil, err
 	}
-	return connectors, nil
+	return []Connector{c}, nil
 }
