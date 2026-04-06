@@ -101,8 +101,8 @@
 - [x] Health endpoint verified
 
 ### 📋 Workers Service — Pending
-- [ ] Set up message source connectors
-  - [ ] WhatsApp connector (whatsmeow)
+- [x] Set up message source connectors
+  - [x] WhatsApp connector (whatsmeow)
   - [ ] Telegram connector (go-telegram-bot-api)
   - [ ] Manual entry connector
 - [ ] Implement message parser
@@ -211,5 +211,5 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. Implement message source connectors + parser in workers service
+1. Implement message parser in workers service (regex + Claude Haiku fallback)
 2. Begin Flutter mobile app scaffold (`apps/mobile`)
