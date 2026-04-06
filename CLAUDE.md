@@ -156,7 +156,7 @@ bun run build          # Build all packages
 project-neo/
 ├── apps/
 │   ├── mobile/              # Flutter mobile app (Dart) — not started
-│   ├── workers/             # Workers service (Go binary) — stub
+│   ├── workers/             # Workers service (Go binary) — WhatsApp + message parser implemented
 │   │   ├── go.mod
 │   │   ├── main.go
 │   │   └── package.json

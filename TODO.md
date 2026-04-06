@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 5, 2026 (session 3)
+**Last Updated**: April 6, 2026 (session 4)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -104,17 +104,21 @@
   - [x] syncGroups() called after connect — auto-registers all joined groups
   - [x] connector.go always starts WhatsApp client (no DB gate)
 
+### ✅ Completed — Workers Message Parser (`apps/workers/parser`)
+- [x] `ParsedRide` struct and `ErrNotARide` sentinel (`types.go`)
+- [x] Regex-based ride message extractor (`regex.go`)
+- [x] Claude Haiku fallback extractor (`haiku.go`)
+- [x] Location context resolver — alias → coordinates (`location.go`)
+- [x] Parser writer — ride insert + message status update (`writer.go`)
+- [x] Extractor pipeline: regex → Haiku → location → write (`extractor.go`)
+- [x] pg_notify listener for message parser (`listener.go`)
+- [x] Wired message parser listener in `run.go`
+
 ### 📋 Workers Service — Pending
 - [ ] Set up additional message source connectors
   - [ ] Telegram connector (go-telegram-bot-api)
   - [ ] Manual entry connector
-- [ ] Implement message parser
-  - [ ] NLP/regex-based extraction
-  - [ ] Location context resolution
-  - [ ] Time parsing ("now", "3:30 PM", etc.)
 - [ ] Background job processing
-  - [ ] Message polling/listening
-  - [ ] Parse and store messages
   - [ ] Error handling and retries
 - [ ] Add logging and monitoring
 
@@ -214,6 +218,6 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. Verify WhatsApp self-onboarding end-to-end (docker up → scan QR → check groups/messages tables)
-2. Implement message parser in workers service (regex + Claude Haiku fallback)
+1. Verify message parser end-to-end (WhatsApp message → pg_notify → regex/Haiku extract → ride row)
+2. Add error handling and retries for parser pipeline
 3. Begin Flutter mobile app scaffold (`apps/mobile`)
