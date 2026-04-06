@@ -17,6 +17,7 @@ var (
 	inTimeRe        = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
 	costRe          = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)|(\d+(?:\.\d{1,2})?)\s*[$₹£€]`)
 	distanceRe      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
+	seatsRe         = regexp.MustCompile(`(?i)\bfor\s+(\d+)\s*(?:ppl|people|members?|persons?|passengers?)\b`)
 	locationTrailRe = regexp.MustCompile(`(?i)\s+(?:` +
 		`at\s+\d+[:.]\d+` + // "at 3:30pm" or "at 3.30pm"
 		`|at\s+\d{1,2}\s+\d{2}\s*(?:am|pm)` + // "at 2 40pm" (malformed time with space)
@@ -106,6 +107,13 @@ func extractWithRegex(content string) (*ParsedRide, bool) {
 	if m := distanceRe.FindStringSubmatch(content); len(m) >= 2 {
 		if v, err := strconv.ParseFloat(m[1], 64); err == nil {
 			parsed.Distance = &v
+		}
+	}
+
+	// Seats available
+	if m := seatsRe.FindStringSubmatch(content); len(m) >= 2 {
+		if v, err := strconv.Atoi(m[1]); err == nil {
+			parsed.SeatsAvailable = &v
 		}
 	}
 

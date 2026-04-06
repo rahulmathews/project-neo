@@ -22,4 +22,5 @@ type ParsedRide struct {
 	Cost             *float64
 	Currency         *string // nil → writer defaults to "USD"
 	Distance         *float64
+	SeatsAvailable   *int
 }
