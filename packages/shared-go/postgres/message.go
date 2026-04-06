@@ -46,3 +46,19 @@ func (s *MessageStore) ExistsByHash(ctx context.Context, groupID uuid.UUID, cont
 	}
 	return exists, nil
 }
+
+// GetByID fetches a message by primary key. Returns (nil, nil) if not found.
+func (s *MessageStore) GetByID(ctx context.Context, id uuid.UUID) (*model.Message, error) {
+	msg := new(model.Message)
+	err := s.db.NewSelect().
+		Model(msg).
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get message by id: %w", err)
+	}
+	return msg, nil
+}
