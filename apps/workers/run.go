@@ -13,6 +13,7 @@ import (
 
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
+	"project-neo/workers/parser"
 
 	"github.com/uptrace/bun"
 )
@@ -48,6 +49,8 @@ func run() error {
 		port = "8083"
 	}
 	srv := startHealthServer(port, logger)
+
+	go parser.StartListener(ctx, databaseURL, bunDB, logger)
 
 	waitForShutdown(cancel, connectors, srv, logger)
 	return nil

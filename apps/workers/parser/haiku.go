@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"project-neo/shared/model"
@@ -27,7 +26,7 @@ type haikuResponse struct {
 // extractWithHaiku calls Claude Haiku to parse a freeform message.
 // Returns ErrNotARide if the message is not a ride request/offer.
 // Returns an error wrapping "ANTHROPIC_API_KEY not configured" if the key is missing.
-func extractWithHaiku(ctx context.Context, content string, groupName string, logger *slog.Logger) (*ParsedRide, error) {
+func extractWithHaiku(ctx context.Context, content string, groupName string) (*ParsedRide, error) {
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
 	if apiKey == "" {
 		return nil, fmt.Errorf("ANTHROPIC_API_KEY not configured")

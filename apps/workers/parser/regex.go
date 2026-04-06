@@ -19,6 +19,31 @@ var (
 	distanceRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
 )
 
+// parseDepartureTime populates IsImmediate and DepartureTime on parsed from content.
+func parseDepartureTime(content string, parsed *ParsedRide) {
+	if nowRe.MatchString(content) {
+		parsed.IsImmediate = true
+		return
+	}
+	if inTimeRe.MatchString(content) {
+		// Relative time ("in 30 mins") — no absolute DepartureTime stored
+		return
+	}
+	m := timeRe.FindString(content)
+	if m == "" {
+		return
+	}
+	for _, layout := range []string{"3:04 PM", "3:04PM"} {
+		if t, err := time.Parse(layout, strings.TrimSpace(m)); err == nil {
+			now := time.Now()
+			dep := time.Date(now.Year(), now.Month(), now.Day(),
+				t.Hour(), t.Minute(), 0, 0, now.Location())
+			parsed.DepartureTime = &dep
+			break
+		}
+	}
+}
+
 // extractWithRegex attempts structured extraction from content.
 // Returns (parsed, true) on a hit (ride type + at least one location found),
 // or (nil, false) on a miss.
@@ -43,23 +68,7 @@ func extractWithRegex(content string) (*ParsedRide, bool) {
 	}
 
 	// Departure time
-	if nowRe.MatchString(content) {
-		parsed.IsImmediate = true
-	} else if inTimeRe.MatchString(content) {
-		parsed.IsImmediate = false
-		// Relative time ("in 30 mins") — no absolute DepartureTime stored
-	} else if m := timeRe.FindString(content); m != "" {
-		parsed.IsImmediate = false
-		for _, layout := range []string{"3:04 PM", "3:04PM"} {
-			if t, err := time.Parse(layout, strings.TrimSpace(m)); err == nil {
-				now := time.Now()
-				dep := time.Date(now.Year(), now.Month(), now.Day(),
-					t.Hour(), t.Minute(), 0, 0, now.Location())
-				parsed.DepartureTime = &dep
-				break
-			}
-		}
-	}
+	parseDepartureTime(content, parsed)
 
 	// Cost
 	if m := costRe.FindStringSubmatch(content); m != nil {
