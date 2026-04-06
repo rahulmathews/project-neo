@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 5, 2026 (session 2)
+**Last Updated**: April 5, 2026 (session 3)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -99,10 +99,13 @@
 - [x] Initialize Go module
 - [x] Set up worker framework
 - [x] Health endpoint verified
+- [x] WhatsApp self-onboarding — connect-then-discover (no DB pre-seeding required)
+  - [x] UpsertGroup + UpsertGroupSource in shared-go
+  - [x] syncGroups() called after connect — auto-registers all joined groups
+  - [x] connector.go always starts WhatsApp client (no DB gate)
 
 ### 📋 Workers Service — Pending
-- [x] Set up message source connectors
-  - [x] WhatsApp connector (whatsmeow)
+- [ ] Set up additional message source connectors
   - [ ] Telegram connector (go-telegram-bot-api)
   - [ ] Manual entry connector
 - [ ] Implement message parser
@@ -211,5 +214,6 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. Implement message parser in workers service (regex + Claude Haiku fallback)
-2. Begin Flutter mobile app scaffold (`apps/mobile`)
+1. Verify WhatsApp self-onboarding end-to-end (docker up → scan QR → check groups/messages tables)
+2. Implement message parser in workers service (regex + Claude Haiku fallback)
+3. Begin Flutter mobile app scaffold (`apps/mobile`)
