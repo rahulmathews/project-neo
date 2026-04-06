@@ -20,5 +20,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -tags nosqlite -o /bin/workers ./apps/work
 # Stage 2: minimal runtime image
 FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /bin/workers /workers
-EXPOSE 8081
+EXPOSE 8083
 ENTRYPOINT ["/workers"]

@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: apps/workers/Dockerfile
     ports:
-      - "8083:8081"
+      - "8083:8083"
     environment:
       - DATABASE_URL=${DATABASE_URL}
     networks:
