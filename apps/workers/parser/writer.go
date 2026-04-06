@@ -26,7 +26,6 @@ func writeRide(
 	// Skip if a ride already exists for this content in this group (duplicate message).
 	var exists bool
 	if err := db.NewSelect().
-		TableExpr("rides AS r").
 		ColumnExpr("EXISTS (SELECT 1 FROM rides r2 JOIN messages m ON m.id = r2.message_id WHERE m.group_id = ? AND m.content_hash = ?)", msg.GroupID, msg.ContentHash).
 		Scan(ctx, &exists); err != nil {
 		logger.Warn("writer: duplicate check failed, proceeding", "msg_id", msg.ID, "error", err)
