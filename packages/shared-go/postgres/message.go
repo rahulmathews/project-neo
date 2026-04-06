@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,7 +57,7 @@ func (s *MessageStore) GetByID(ctx context.Context, id uuid.UUID) (*model.Messag
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get message by id: %w", err)
