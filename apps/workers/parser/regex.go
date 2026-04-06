@@ -15,7 +15,7 @@ var (
 	nowRe           = regexp.MustCompile(`(?i)\bnow\b`)
 	timeRe          = regexp.MustCompile(`(?i)\b(\d{1,2}[:.]\d{2}\s*(?:AM|PM))\b`)
 	inTimeRe        = regexp.MustCompile(`(?i)\bin\s+\d+\s*(?:min|mins|minutes|hour|hours|hr|hrs)\b`)
-	costRe          = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)`)
+	costRe          = regexp.MustCompile(`(?i)(?:[$₹£€])(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:USD|INR|GBP|EUR)|(\d+(?:\.\d{1,2})?)\s*[$₹£€]`)
 	distanceRe      = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(?:km|miles|mi)\b`)
 	locationTrailRe = regexp.MustCompile(`(?i)\s+(?:` +
 		`at\s+\d+[:.]\d+` + // "at 3:30pm" or "at 3.30pm"
@@ -93,6 +93,9 @@ func extractWithRegex(content string) (*ParsedRide, bool) {
 		raw := m[1]
 		if raw == "" {
 			raw = m[2]
+		}
+		if raw == "" {
+			raw = m[3]
 		}
 		if v, err := strconv.ParseFloat(raw, 64); err == nil {
 			parsed.Cost = &v
