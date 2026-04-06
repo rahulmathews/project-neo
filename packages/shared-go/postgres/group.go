@@ -90,3 +90,32 @@ func (r *groupRepository) UpsertLocationContext(ctx context.Context, input model
 	}
 	return lc, nil
 }
+
+// GroupStore is a concrete store for direct group upsert operations (used by workers).
+type GroupStore struct {
+	db *bun.DB
+}
+
+func NewGroupStore(db *bun.DB) *GroupStore {
+	return &GroupStore{db: db}
+}
+
+// UpsertGroup inserts a group by name, or returns the existing ID if one already exists.
+// Uses DO UPDATE SET name = EXCLUDED.name (no-op) so RETURNING id works on both paths.
+func (s *GroupStore) UpsertGroup(ctx context.Context, name string) (uuid.UUID, error) {
+	group := &model.Group{
+		ID:       uuid.New(),
+		Name:     name,
+		IsActive: true,
+	}
+	_, err := s.db.NewInsert().
+		Model(group).
+		On("CONFLICT (name) DO UPDATE").
+		Set("name = EXCLUDED.name").
+		Returning("id").
+		Exec(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("upsert group: %w", err)
+	}
+	return group.ID, nil
+}
