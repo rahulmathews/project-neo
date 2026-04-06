@@ -15,7 +15,7 @@ RUN go work sync
 COPY apps/workers/ ./apps/workers/
 COPY packages/shared-go/ ./packages/shared-go/
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/workers ./apps/workers/
+RUN CGO_ENABLED=0 GOOS=linux go build -tags nosqlite -o /bin/workers ./apps/workers/
 
 # Stage 2: minimal runtime image
 FROM gcr.io/distroless/static:nonroot
