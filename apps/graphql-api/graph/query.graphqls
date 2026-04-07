@@ -1,7 +1,13 @@
 type Query {
   health: String!
   me: User!
-  rides(groupId: UUID!, type: RideType, status: RideStatus, limit: Int, offset: Int): [Ride!]!
+  rides(
+    groupId: UUID!
+    type: RideType
+    status: RideStatus
+    limit: Int
+    offset: Int
+  ): [Ride!]!
   ride(id: UUID!): Ride
   myRides(limit: Int, offset: Int): [Ride!]!
   myMatches(limit: Int, offset: Int): [Match!]!

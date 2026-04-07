@@ -1,10 +1,29 @@
 scalar UUID
 scalar Time
 
-enum UserRole { RIDER DRIVER BOTH }
-enum RideType { NEED_RIDE RIDE_AVAILABLE }
-enum RideStatus { AVAILABLE MATCHED COMPLETED CANCELLED EXPIRED }
-enum MatchStatus { PENDING ACCEPTED REJECTED COMPLETED CANCELLED }
+enum UserRole {
+  RIDER
+  DRIVER
+  BOTH
+}
+enum RideType {
+  NEED_RIDE
+  RIDE_AVAILABLE
+}
+enum RideStatus {
+  AVAILABLE
+  MATCHED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
 
 type User {
   id: UUID!
