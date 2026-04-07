@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Neo — Rides Extracted from the Noise</title>
+  <meta name="description" content="Project Neo automatically extracts ride requests from WhatsApp and Telegram group chats, matching riders with drivers in real-time. Open source, self-hosted, built in Go + Flutter." />
+  <meta property="og:title" content="Project Neo — Rides Extracted from the Noise" />
+  <meta property="og:description" content="Your community already coordinates rides in group chats. Project Neo makes that data work." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/landing.css" />
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-dot"></span>
+    PROJECT·NEO
+  </a>
+  <div class="nav-right">
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#roadmap" class="nav-link">Roadmap</a>
+    <a href="https://github.com/rahulmathews/project-neo" class="btn-ghost" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-bg">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+  </div>
+
+  <div class="section-inner">
+    <div class="hero-grid">
+
+      <!-- LEFT: Copy -->
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-badge">Open Source</span>
+          <span class="eyebrow-text">Self-hosted · Go + Flutter · Real-time</span>
+        </div>
+
+        <h1 class="hero-headline">
+          Every group chat<br>is a <em>dispatch center.</em><br>Now it acts like one.
+        </h1>
+
+        <p class="hero-sub">
+          Project Neo automatically extracts ride requests and offers from WhatsApp and Telegram groups — no app required for senders. Structured data, matched in real-time.
+        </p>
+
+        <div class="hero-actions">
+          <a href="https://github.com/rahulmathews/project-neo" class="btn-primary" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            View on GitHub
+          </a>
+          <a href="#how" class="btn-ghost">See how it works →</a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Phases complete</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">8</span>
+            <span class="stat-label">DB tables live</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">E2E</span>
+            <span class="stat-label">Pipeline verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live parsing demo -->
+      <div class="demo-panel">
+        <div class="demo-wrapper">
+          <div class="demo-topbar">
+            <div class="demo-dots">
+              <div class="demo-dot"></div>
+              <div class="demo-dot"></div>
+              <div class="demo-dot"></div>
+            </div>
+            <span class="demo-title">neo · extract → match → dispatch</span>
+            <span></span>
+          </div>
+
+          <div class="demo-body">
+            <!-- WhatsApp message -->
+            <div class="demo-chat-panel">
+              <div class="demo-chat-label">WhatsApp Group</div>
+              <div class="chat-bubble" id="chatBubble">
+                <div class="chat-sender">Sipho M.</div>
+                <div class="chat-text" id="chatText"></div>
+                <span class="chat-cursor" id="chatCursor"></span>
+                <div class="scan-overlay" id="scanOverlay"></div>
+                <div class="scan-line" id="scanLine"></div>
+                <div class="chat-time">08:42</div>
+              </div>
+            </div>
+
+            <!-- Extracted ride card -->
+            <div class="demo-result-panel">
+              <div class="demo-result-label">Extracted Ride</div>
+              <div class="ride-card">
+                <div class="ride-card-header">
+                  <span class="ride-type-badge">need_ride</span>
+                  <div class="ride-status-dot" id="rideDot" style="opacity:0"></div>
+                </div>
+                <div class="ride-field" id="rf1">
+                  <div class="ride-field-key">route</div>
+                  <div class="ride-field-value" id="rfv1">—</div>
+                </div>
+                <div class="ride-field" id="rf2">
+                  <div class="ride-field-key">departs</div>
+                  <div class="ride-field-value" id="rfv2">—</div>
+                </div>
+                <div class="ride-field" id="rf3">
+                  <div class="ride-field-key">cost</div>
+                  <div class="ride-field-value" id="rfv3">—</div>
+                </div>
+                <div class="ride-field" id="rf4">
+                  <div class="ride-field-key">seats</div>
+                  <div class="ride-field-value" id="rfv4">—</div>
+                </div>
+                <div class="ride-field" id="rf5">
+                  <div class="ride-field-key">status</div>
+                  <div class="ride-field-value" id="rfv5">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Match + ETA card -->
+            <div class="demo-match-panel" id="matchPanel">
+              <div class="demo-result-label match-label">Match Found</div>
+              <div class="match-card">
+                <div class="match-card-header">
+                  <span class="match-type-badge">matched</span>
+                  <div class="match-ping" id="matchPing" style="opacity:0"></div>
+                </div>
+                <div class="match-field" id="mf1">
+                  <div class="match-field-key">driver</div>
+                  <div class="match-field-value" id="mfv1">—</div>
+                </div>
+                <div class="match-field" id="mf2">
+                  <div class="match-field-key">eta</div>
+                  <div class="match-field-value match-field-eta" id="mfv2">—</div>
+                </div>
+                <div class="match-field" id="mf3">
+                  <div class="match-field-key">status</div>
+                  <div class="match-field-value" id="mfv3">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-footer">
+            <div class="demo-status">
+              <div class="demo-status-dot"></div>
+              <span id="demoStatusText">listening for messages…</span>
+            </div>
+            <span class="demo-badge">whatsapp</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROBLEM ───────────────────────────────────────── -->
+<section id="problem">
+  <div class="section-inner">
+    <div class="section-label fade-in">
+      <span class="label label--accent">The Problem</span>
+    </div>
+    <h2 class="section-headline fade-in">
+      Rides are being<br><em>coordinated blind.</em>
+    </h2>
+
+    <div class="problem-grid">
+      <div class="problem-pain-list">
+        <div class="pain-item fade-in">
+          <div class="pain-icon">📱</div>
+          <div>
+            <div class="pain-title">Data trapped in chat</div>
+            <div class="pain-desc">Thousands of ride requests flow through WhatsApp and Telegram groups daily. Without structure, they vanish into scroll history — unmatched and unactionable.</div>
+          </div>
+        </div>
+        <div class="pain-item fade-in fade-in-delay-1">
+          <div class="pain-icon">🔍</div>
+          <div>
+            <div class="pain-title">No visibility, no matching</div>
+            <div class="pain-desc">Drivers can't see all requests. Riders can't see all offers. People miss rides because the right message appeared while they were offline.</div>
+          </div>
+        </div>
+        <div class="pain-item fade-in fade-in-delay-2">
+          <div class="pain-icon">⏱️</div>
+          <div>
+            <div class="pain-title">Manual effort for every match</div>
+            <div class="pain-desc">Coordinators spend hours reading messages, DMing people, and confirming rides. It doesn't scale, and it burns people out.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="problem-scene fade-in fade-in-delay-1">
+        <div class="chat-stack">
+          <div class="chat-stack-header">
+            <div class="chat-group-avatar">🚗</div>
+            <div class="chat-group-info">
+              <div class="chat-group-name">Downtown Riders 🏙️</div>
+              <div class="chat-group-count">247 members</div>
+            </div>
+          </div>
+          <div class="stacked-bubble">
+            <div class="stacked-sender">Amara K.</div>
+            <div class="stacked-text">Need ride to airport tmrw 6am anyone going that way?</div>
+            <div class="stacked-time">Yesterday 11:32</div>
+          </div>
+          <div class="stacked-bubble">
+            <div class="stacked-sender">Sipho M.</div>
+            <div class="stacked-text">Ride available now from station to mall N$35</div>
+            <div class="stacked-time">08:42</div>
+          </div>
+          <div class="stacked-bubble">
+            <div class="stacked-sender">Tunde O.</div>
+            <div class="stacked-text">anyone going CBD? need ride at 3:30pm today, 2 seats</div>
+            <div class="stacked-time">11:15</div>
+          </div>
+          <div class="stacked-bubble">
+            <div class="stacked-sender">Grace N.</div>
+            <div class="stacked-text">going to uni at 7:30 tomorrow space for 3 R20 each</div>
+            <div class="stacked-time">12:08</div>
+          </div>
+        </div>
+        <div class="chaos-label">↑ Unstructured. Unmatched. Unreachable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ──────────────────────────────────── -->
+<section id="how">
+  <div class="section-inner">
+    <div class="how-header">
+      <div>
+        <div class="section-label fade-in">
+          <span class="label label--teal">How It Works</span>
+        </div>
+        <h2 class="section-headline fade-in">
+          Signal from<br><em>the noise.</em>
+        </h2>
+      </div>
+      <p class="section-sub fade-in fade-in-delay-1">
+        A five-stage pipeline turns informal group chat messages into a structured, real-time ride marketplace — without changing how anyone in the group communicates.
+      </p>
+    </div>
+
+    <div class="steps-flow">
+
+      <div class="step-card fade-in">
+        <div class="step-num">01 / INGEST</div>
+        <div class="step-icon-wrap orange">📨</div>
+        <h3 class="step-title">Messages Arrive</h3>
+        <p class="step-desc">Workers connect to WhatsApp and Telegram groups using official and community APIs. Every message is captured and stored with full metadata in real-time.</p>
+        <div class="step-detail">
+          <div class="step-detail-item">whatsmeow (Go WhatsApp lib)</div>
+          <div class="step-detail-item">go-telegram-bot-api</div>
+          <div class="step-detail-item">pg_notify for event fan-out</div>
+        </div>
+      </div>
+
+      <div class="step-arrow fade-in fade-in-delay-1"></div>
+
+      <div class="step-card fade-in fade-in-delay-1">
+        <div class="step-num">02 / CLASSIFY</div>
+        <div class="step-icon-wrap purple">🔎</div>
+        <h3 class="step-title">Detect Ride Intent</h3>
+        <p class="step-desc">Not every message is a ride. A lightweight classifier determines whether it contains a ride offer or request before any expensive parsing begins.</p>
+        <div class="step-detail">
+          <div class="step-detail-item">Keyword + pattern rules</div>
+          <div class="step-detail-item">Skip non-ride messages</div>
+          <div class="step-detail-item">parse_status flags in DB</div>
+        </div>
+      </div>
+
+      <div class="step-arrow fade-in fade-in-delay-1"></div>
+
+      <div class="step-card fade-in fade-in-delay-2">
+        <div class="step-num">03 / PARSE</div>
+        <div class="step-icon-wrap teal">⚡</div>
+        <h3 class="step-title">Extract &amp; Structure</h3>
+        <p class="step-desc">A two-stage parser (regex → Claude Haiku fallback) extracts ride type, route, time, cost, and seats from free-form text.</p>
+        <div class="step-detail">
+          <div class="step-detail-item">Regex-first (zero latency)</div>
+          <div class="step-detail-item">Claude Haiku fallback (AI)</div>
+          <div class="step-detail-item">Typed ride record in DB</div>
+        </div>
+      </div>
+
+      <div class="step-arrow fade-in fade-in-delay-2"></div>
+
+      <div class="step-card fade-in fade-in-delay-3">
+        <div class="step-num">04 / RESOLVE</div>
+        <div class="step-icon-wrap blue">📍</div>
+        <h3 class="step-title">Map Locations</h3>
+        <p class="step-desc">Group-specific aliases ("Station", "Mall") are resolved to real GPS coordinates via the location_contexts table, giving every ride precise coordinates.</p>
+        <div class="step-detail">
+          <div class="step-detail-item">Per-group alias registry</div>
+          <div class="step-detail-item">GPS coordinate resolution</div>
+          <div class="step-detail-item">Fuzzy alias matching</div>
+        </div>
+      </div>
+
+      <div class="step-arrow fade-in fade-in-delay-3"></div>
+
+      <div class="step-card fade-in fade-in-delay-4">
+        <div class="step-num">05 / MATCH</div>
+        <div class="step-icon-wrap gold">🔗</div>
+        <h3 class="step-title">Pair &amp; Dispatch</h3>
+        <p class="step-desc">Structured rides stream via GraphQL subscriptions to the Flutter app. Drivers see matching requests; riders see available offers. A confirmation closes the loop.</p>
+        <div class="step-detail">
+          <div class="step-detail-item">GraphQL subscriptions (gqlgen)</div>
+          <div class="step-detail-item">Route + timing match engine</div>
+          <div class="step-detail-item">Flutter mobile (iOS + Android)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── ARCHITECTURE ──────────────────────────────────── -->
+<section id="arch">
+  <div class="section-inner">
+    <div class="section-label fade-in">
+      <span class="label">Architecture</span>
+    </div>
+    <h2 class="section-headline fade-in">Built for <em>performance.</em></h2>
+
+    <div class="arch-grid">
+      <!-- Stack layers -->
+      <div class="arch-stack fade-in">
+        <div class="arch-layer">
+          <div class="arch-layer-icon">📱</div>
+          <div class="arch-layer-content">
+            <div class="arch-layer-name">Message Sources</div>
+            <div class="arch-layer-desc">WhatsApp · Telegram · Manual</div>
+          </div>
+          <span class="arch-badge orange">Ingest</span>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-line"></div></div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon">⚙️</div>
+          <div class="arch-layer-content">
+            <div class="arch-layer-name">Workers Service</div>
+            <div class="arch-layer-desc">Go binary · goroutines · message parser</div>
+          </div>
+          <span class="arch-badge teal">Go 1.25</span>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-line"></div></div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon">🔌</div>
+          <div class="arch-layer-content">
+            <div class="arch-layer-name">Supabase (Local)</div>
+            <div class="arch-layer-desc">PostgreSQL · pg_notify · Auth · Realtime</div>
+          </div>
+          <span class="arch-badge purple">Self-hosted</span>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-line"></div></div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon">🚀</div>
+          <div class="arch-layer-content">
+            <div class="arch-layer-name">GraphQL API</div>
+            <div class="arch-layer-desc">gqlgen · subscriptions · JWT auth</div>
+          </div>
+          <span class="arch-badge teal">Go 1.25</span>
+        </div>
+        <div class="arch-connector"><div class="arch-connector-line"></div></div>
+        <div class="arch-layer">
+          <div class="arch-layer-icon">📲</div>
+          <div class="arch-layer-content">
+            <div class="arch-layer-name">Flutter Mobile App</div>
+            <div class="arch-layer-desc">iOS · Android · Real-time subscriptions</div>
+          </div>
+          <span class="arch-badge gold">In Progress</span>
+        </div>
+      </div>
+
+      <!-- Meta cards -->
+      <div class="arch-meta fade-in fade-in-delay-2">
+        <div class="arch-meta-card">
+          <div class="arch-meta-title">Why these choices?</div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Local-first</span>
+            <span class="arch-meta-val">Cloud IPs get blocked</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Go backend</span>
+            <span class="arch-meta-val">2-3× faster than Node</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Flutter</span>
+            <span class="arch-meta-val">1 codebase → iOS + Android</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">GraphQL subs</span>
+            <span class="arch-meta-val">True real-time matching</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">pg_notify</span>
+            <span class="arch-meta-val">Zero-latency DB events</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Distroless images</span>
+            <span class="arch-meta-val">Minimal attack surface</span>
+          </div>
+        </div>
+
+        <div class="arch-meta-card">
+          <div class="arch-meta-title">Stack at a glance</div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Backend</span>
+            <span class="arch-meta-val">Go 1.25 + gqlgen + Bun ORM</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Database</span>
+            <span class="arch-meta-val">PostgreSQL via Supabase</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Mobile</span>
+            <span class="arch-meta-val">Flutter (Dart)</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">Infra</span>
+            <span class="arch-meta-val">Docker + Turborepo monorepo</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">CI/CD</span>
+            <span class="arch-meta-val">GitHub Actions + Changesets</span>
+          </div>
+          <div class="arch-meta-item">
+            <span class="arch-meta-key">AI Parser</span>
+            <span class="arch-meta-val">Claude Haiku (fallback)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ─────────────────────────────────────── -->
+<section id="features">
+  <div class="section-inner">
+    <div class="features-header">
+      <div>
+        <div class="section-label fade-in">
+          <span class="label label--gold">Platform Vision</span>
+        </div>
+        <h2 class="section-headline fade-in">
+          Full ride-sharing.<br><em>Community-native.</em>
+        </h2>
+      </div>
+      <p class="section-sub fade-in fade-in-delay-1">
+        Neo is not just a parser — it's a complete ride-sharing platform. WhatsApp, Telegram, and any group chat become the ingress. The destination is a smarter, community-native alternative to Uber.
+      </p>
+    </div>
+
+    <div class="features-grid">
+
+      <div class="feat-card progress fade-in">
+        <div class="feat-tag feat-tag--progress">In Progress</div>
+        <div class="feat-icon">🔗</div>
+        <h3 class="feat-title">Message → Driver Matching</h3>
+        <p class="feat-desc">Once a ride is parsed from chat, Neo matches it against available drivers or riders using route, timing, and seat data. No dispatcher — the algorithm surfaces the right connection automatically and notifies both sides via the app.</p>
+        <div class="feat-flow">
+          <span class="feat-flow-step">Chat message</span>
+          <span class="feat-flow-arrow">→</span>
+          <span class="feat-flow-step">Structured ride</span>
+          <span class="feat-flow-arrow">→</span>
+          <span class="feat-flow-step">Driver matched</span>
+          <span class="feat-flow-arrow">→</span>
+          <span class="feat-flow-step">Both notified</span>
+        </div>
+      </div>
+
+      <div class="feat-card upcoming fade-in fade-in-delay-1">
+        <div class="feat-tag feat-tag--soon">Coming Soon</div>
+        <div class="feat-icon">🚗</div>
+        <h3 class="feat-title">Ride Pooling</h3>
+        <p class="feat-desc">Multiple riders heading the same direction, one driver trip. Fill every seat and split the cost automatically. Community carpooling at scale — without coordination overhead.</p>
+      </div>
+
+      <div class="feat-card upcoming fade-in fade-in-delay-2">
+        <div class="feat-tag feat-tag--soon">Coming Soon</div>
+        <div class="feat-icon">📍</div>
+        <h3 class="feat-title">Live ETA</h3>
+        <p class="feat-desc">Real-time GPS tracking surfaces driver location and estimated arrival directly in the app. No more "5 mins" guesswork in the group chat. Know exactly when your ride arrives.</p>
+      </div>
+
+      <div class="feat-card planned fade-in fade-in-delay-3">
+        <div class="feat-tag feat-tag--planned">Planned</div>
+        <div class="feat-icon">🌐</div>
+        <h3 class="feat-title">More Connectors</h3>
+        <p class="feat-desc">Discord, Slack, SMS — any community where rides are coordinated in plain text becomes a source. The ingress layer is extensible by design.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── ROADMAP ───────────────────────────────────────── -->
+<section id="roadmap">
+  <div class="section-inner">
+    <div class="roadmap-header">
+      <div>
+        <div class="section-label fade-in">
+          <span class="label label--accent">Roadmap &amp; Progress</span>
+        </div>
+        <h2 class="section-headline fade-in">
+          From <em>idea</em><br>to production.
+        </h2>
+      </div>
+      <div class="fade-in fade-in-delay-1">
+        <div class="current-focus">
+          <div class="current-focus-label">▶ Currently building</div>
+          <div class="current-focus-item">Parser error handling &amp; retries</div>
+          <div class="current-focus-item">Flutter mobile app scaffold</div>
+          <div class="current-focus-item">Telegram connector (next)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phases-grid">
+      <div class="phase-card done fade-in">
+        <div class="phase-num">PHASE 01</div>
+        <div class="phase-title">Dev Infrastructure</div>
+        <div class="phase-bar-wrap"><div class="phase-bar done" data-pct="100"></div></div>
+        <div class="phase-pct">
+          <span class="phase-pct-num done">100%</span>
+          <span class="phase-status done">complete</span>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Turborepo monorepo</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Bun + Biome + Husky</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Conventional commits</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>GitHub Actions CI/CD</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Changesets releases</div>
+        </div>
+      </div>
+
+      <div class="phase-card done fade-in fade-in-delay-1">
+        <div class="phase-num">PHASE 02</div>
+        <div class="phase-title">Containerization</div>
+        <div class="phase-bar-wrap"><div class="phase-bar done" data-pct="95"></div></div>
+        <div class="phase-pct">
+          <span class="phase-pct-num done">95%</span>
+          <span class="phase-status done">complete</span>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Docker Compose (dev)</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Multi-stage Dockerfiles</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Distroless images</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Health checks</div>
+          <div class="phase-item"><span class="pi-dot">○</span>Prod docker-compose</div>
+        </div>
+      </div>
+
+      <div class="phase-card done fade-in fade-in-delay-2">
+        <div class="phase-num">PHASE 03</div>
+        <div class="phase-title">Core Application</div>
+        <div class="phase-bar-wrap"><div class="phase-bar done" data-pct="80"></div></div>
+        <div class="phase-pct">
+          <span class="phase-pct-num done">80%</span>
+          <span class="phase-status done">in progress</span>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item checked"><span class="pi-dot">✓</span>Supabase + 8 DB tables</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>GraphQL API (full)</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>WhatsApp worker + parser</div>
+          <div class="phase-item checked"><span class="pi-dot">✓</span>E2E pipeline verified</div>
+          <div class="phase-item"><span class="pi-dot">○</span>Flutter mobile app</div>
+        </div>
+      </div>
+
+      <div class="phase-card active fade-in fade-in-delay-3">
+        <div class="phase-num">PHASE 04–07</div>
+        <div class="phase-title">Scale &amp; Ship</div>
+        <div class="phase-bar-wrap"><div class="phase-bar pend" data-pct="5"></div></div>
+        <div class="phase-pct">
+          <span class="phase-pct-num active">Upcoming</span>
+          <span class="phase-status active">planned</span>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item"><span class="pi-dot">○</span>Ride pooling (split-cost)</div>
+          <div class="phase-item"><span class="pi-dot">○</span>Live ETA &amp; GPS tracking</div>
+          <div class="phase-item"><span class="pi-dot">○</span>Telegram connector</div>
+          <div class="phase-item"><span class="pi-dot">○</span>Monitoring &amp; observability</div>
+          <div class="phase-item"><span class="pi-dot">○</span>VPS deployment + SSL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────────────────── -->
+<section id="cta">
+  <div class="cta-inner">
+    <div class="section-label fade-in" style="justify-content:center; margin-bottom:24px;">
+      <span class="label">Open Source</span>
+    </div>
+    <h2 class="cta-headline fade-in">
+      The ride is<br><em>waiting</em> to be found.
+    </h2>
+    <p class="cta-sub fade-in fade-in-delay-1">
+      Project Neo is being built in public. Follow the progress, contribute ideas, or just watch a ride-sharing marketplace emerge from raw group chat messages.
+    </p>
+    <div class="cta-actions fade-in fade-in-delay-2">
+      <a href="https://github.com/rahulmathews/project-neo" class="btn-primary" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        Star on GitHub
+      </a>
+      <a href="https://github.com/rahulmathews/project-neo/blob/main/TODO.md" class="btn-ghost" target="_blank" rel="noopener">View full roadmap →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────── -->
+<footer>
+  <a href="#" class="footer-logo">
+    <span class="footer-dot"></span>
+    PROJECT·NEO
+  </a>
+  <span class="footer-copy">Built in public · April 2026</span>
+  <div class="footer-links">
+    <a href="https://github.com/rahulmathews/project-neo" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/rahulmathews/project-neo/blob/main/TODO.md" class="footer-link" target="_blank" rel="noopener">Roadmap</a>
+  </div>
+</footer>
+
+<script src="assets/js/landing.js"></script>
+</body>
+</html>
