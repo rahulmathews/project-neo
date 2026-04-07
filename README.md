@@ -1,3 +1,7 @@
+[![CI](https://github.com/rahulmathews/project-neo/actions/workflows/ci.yml/badge.svg)](https://github.com/rahulmathews/project-neo/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/rahulmathews/project-neo?include_prereleases)](https://github.com/rahulmathews/project-neo/releases)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen.svg)](https://github.com/rahulmathews/project-neo/network/updates)
+
 # Project Neo
 
 Ride-sharing app that sources ride requests and offers from messaging platform groups (WhatsApp, Telegram, etc.).

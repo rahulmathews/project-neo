@@ -3,9 +3,6 @@ name: Release
 on:
   push:
     branches: [main]
-    paths:
-      - '.changeset/**/*.md'
-      - '!.changeset/README.md'
   workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -25,12 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.4'
-          cache: true
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -44,25 +35,33 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Go dependencies
-        run: |
-          if [ -f go.work ]; then
-            go work sync
-          fi
-
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: bun run release
           version: bun run version-packages
           commit: 'chore(release): version packages'
           title: 'chore(release): version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Send notification on release
-        if: steps.changesets.outputs.published == 'true'
+      # Runs only when the Version PR (chore(release): version packages) is merged.
+      # `bun run release` = `changeset tag` (creates local git tags, no npm publish).
+      # `--prerelease` matches the alpha channel. Remove this flag when running
+      # `changeset pre exit` to switch to stable releases.
+      - name: Tag and create GitHub Releases
+        if: >
+          github.event_name == 'push' &&
+          steps.changesets.outputs.hasChangesets == 'false' &&
+          startsWith(github.event.head_commit.message, 'chore(release):')
         run: |
-          echo "Packages published!"
-          echo "Published packages: ${{ steps.changesets.outputs.publishedPackages }}"
+          bun run release
+          git push --follow-tags
+          for tag in $(git tag --points-at HEAD); do
+            gh release create "$tag" \
+              --title "$tag" \
+              --generate-notes \
+              --prerelease
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

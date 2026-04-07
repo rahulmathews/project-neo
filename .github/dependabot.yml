@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'gomod'
+    directory: '/apps/graphql-api'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'gomod'
+    directory: '/apps/workers'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'gomod'
+    directory: '/packages/shared-go'
+    schedule:
+      interval: 'weekly'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

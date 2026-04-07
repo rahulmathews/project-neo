@@ -23,7 +23,7 @@
     "check:fix": "biome check --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo build && changeset publish",
+    "release": "changeset tag",
     "prepare": "husky"
   },
   "devDependencies": {

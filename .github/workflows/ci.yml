@@ -22,10 +22,18 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.4'
+          go-version-file: 'apps/graphql-api/go.mod'
           cache: true
 
       - name: Setup Bun
@@ -65,12 +73,3 @@ jobs:
           else
             echo "Skipping build: no packages exist yet"
           fi
-
-
-      - name: Cache Turborepo
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
