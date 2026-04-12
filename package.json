@@ -12,7 +12,7 @@
     "dev": "turbo dev",
     "lint": "bun run lint:js && bun run lint:go",
     "lint:js": "biome lint .",
-    "lint:go": "golangci-lint run --config .golangci.yml ./... 2>/dev/null || echo 'No Go code yet'",
+    "lint:go": "go work edit -json | jq -r '.Use[].DiskPath' | xargs -I{} sh -c 'cd \"{}\" && golangci-lint run --config ../../.golangci.yml ./...'",
     "format": "bun run format:js && bun run format:go",
     "format:js": "biome format --write .",
     "format:go": "gofumpt -w . 2>/dev/null || echo 'No Go code yet'",
