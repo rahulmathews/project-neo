@@ -26,11 +26,11 @@ import (
 
 // Client implements internal.Connector for WhatsApp via whatsmeow.
 type Client struct {
-	wac      *whatsmeow.Client
-	handler  *Handler
-	logger   *slog.Logger
-	wg       *sync.WaitGroup
-	sqliteDB *sql.DB
+	wac       *whatsmeow.Client
+	handler   *Handler
+	logger    *slog.Logger
+	wg        *sync.WaitGroup
+	container *sqlstore.Container
 }
 
 // NewClient creates a whatsmeow client, connects to WhatsApp (QR on first run, silent
@@ -49,14 +49,14 @@ func NewClient(
 	if err != nil {
 		return nil, fmt.Errorf("open whatsapp session db: %w", err)
 	}
-	// Close sqliteDB on any error return; on success it is owned by Client.Stop().
-	defer func() {
-		if err != nil {
-			_ = sqliteDB.Close()
-		}
-	}()
 
 	container := sqlstore.NewWithDB(sqliteDB, "sqlite3", waLog.Noop)
+	// Close container (which also closes sqliteDB) on any error return; on success it is owned by Client.Stop().
+	defer func() {
+		if err != nil {
+			_ = container.Close()
+		}
+	}()
 	if err = container.Upgrade(ctx); err != nil {
 		return nil, fmt.Errorf("whatsmeow db upgrade: %w", err)
 	}
@@ -71,7 +71,7 @@ func NewClient(
 	wac.AutomaticMessageRerequestFromPhone = false
 
 	wg := &sync.WaitGroup{}
-	c = &Client{wac: wac, logger: logger, wg: wg, sqliteDB: sqliteDB}
+	c = &Client{wac: wac, logger: logger, wg: wg, container: container}
 
 	// Connect first — QR flow or silent session resume.
 	if err = c.connect(ctx); err != nil {
@@ -200,7 +200,7 @@ func (c *Client) Start(_ context.Context) error {
 func (c *Client) Stop() {
 	c.wac.Disconnect()
 	c.wg.Wait()
-	if err := c.sqliteDB.Close(); err != nil {
+	if err := c.container.Close(); err != nil {
 		c.logger.Error("failed to close whatsapp session db", "error", err)
 	}
 }
