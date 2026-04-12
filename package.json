@@ -21,14 +21,10 @@
     "format:check:go": "test -z \"$(gofumpt -l . 2>/dev/null)\" || (echo 'Go files need formatting' && exit 1)",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "changeset tag",
     "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
-    "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "husky": "^9.1.7",
