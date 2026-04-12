@@ -5,11 +5,15 @@
   "packages": {
     "apps/workers": {
       "component": "workers",
-      "release-type": "simple"
+      "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     },
     "apps/graphql-api": {
       "component": "graphql-api",
-      "release-type": "simple"
+      "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     }
   }
 }
