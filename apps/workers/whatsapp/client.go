@@ -58,6 +58,7 @@ func NewClient(
 
 	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
+		_ = sqliteDB.Close()
 		return nil, fmt.Errorf("get whatsmeow device: %w", err)
 	}
 
@@ -70,6 +71,7 @@ func NewClient(
 
 	// Connect first — QR flow or silent session resume.
 	if err = c.connect(ctx); err != nil {
+		_ = sqliteDB.Close()
 		return nil, err
 	}
 
@@ -81,6 +83,7 @@ func NewClient(
 	// Discover all joined groups and sync to the database.
 	jidMap, srcMap, err := c.syncGroups(ctx, groupStore, groupSourceStore)
 	if err != nil {
+		_ = sqliteDB.Close()
 		return nil, fmt.Errorf("sync groups: %w", err)
 	}
 

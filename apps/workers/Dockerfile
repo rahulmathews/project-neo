@@ -15,10 +15,14 @@ RUN go work sync
 COPY apps/workers/ ./apps/workers/
 COPY packages/shared-go/ ./packages/shared-go/
 
-RUN CGO_ENABLED=0 GOOS=linux go build -tags nosqlite -o /bin/workers ./apps/workers/
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/workers ./apps/workers/
+
+# Create /data with nonroot ownership (65532 = distroless nonroot uid)
+RUN mkdir -p /data && chown 65532:65532 /data
 
 # Stage 2: minimal runtime image
 FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /bin/workers /workers
+COPY --from=builder --chown=65532:65532 /data /data
 EXPOSE 8083
 ENTRYPOINT ["/workers"]

@@ -2,8 +2,8 @@ package internal
 
 import (
 	"context"
-	"database/sql"
 	"log/slog"
+	"os"
 
 	sharedpostgres "project-neo/shared/postgres"
 	"project-neo/workers/whatsapp"
@@ -19,11 +19,16 @@ type Connector interface {
 
 // NewConnectors creates all platform connectors. The WhatsApp connector is always
 // started — it handles QR pairing on first run and silent session resume thereafter.
-func NewConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *slog.Logger) ([]Connector, error) {
+func NewConnectors(ctx context.Context, bunDB *bun.DB, logger *slog.Logger) ([]Connector, error) {
 	groupStore := sharedpostgres.NewGroupStore(bunDB)
 	groupSourceStore := sharedpostgres.NewGroupSourceStore(bunDB)
 
-	c, err := whatsapp.NewClient(ctx, groupStore, groupSourceStore, bunDB, sqlDB, logger)
+	sessionPath := os.Getenv("WHATSAPP_SESSION_PATH")
+	if sessionPath == "" {
+		sessionPath = "whatsapp.db"
+	}
+
+	c, err := whatsapp.NewClient(ctx, groupStore, groupSourceStore, bunDB, sessionPath, logger)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -26,7 +25,7 @@ func run() error {
 		return fmt.Errorf("DATABASE_URL environment variable is required")
 	}
 
-	bunDB, sqlDB, err := initDB(databaseURL)
+	bunDB, err := initDB(databaseURL)
 	if err != nil {
 		return fmt.Errorf("database init: %w", err)
 	}
@@ -39,7 +38,7 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	connectors, err := buildConnectors(ctx, bunDB, sqlDB, logger)
+	connectors, err := buildConnectors(ctx, bunDB, logger)
 	if err != nil {
 		return fmt.Errorf("build connectors: %w", err)
 	}
@@ -56,17 +55,16 @@ func run() error {
 	return nil
 }
 
-func initDB(databaseURL string) (*bun.DB, *sql.DB, error) {
+func initDB(databaseURL string) (*bun.DB, error) {
 	bunDB, err := sharedpostgres.NewDB(databaseURL)
 	if err != nil {
-		return nil, nil, fmt.Errorf("open postgres: %w", err)
+		return nil, fmt.Errorf("open postgres: %w", err)
 	}
-	sqlDB := bunDB.DB
-	return bunDB, sqlDB, nil
+	return bunDB, nil
 }
 
-func buildConnectors(ctx context.Context, bunDB *bun.DB, sqlDB *sql.DB, logger *slog.Logger) ([]workersinternal.Connector, error) {
-	connectors, err := workersinternal.NewConnectors(ctx, bunDB, sqlDB, logger)
+func buildConnectors(ctx context.Context, bunDB *bun.DB, logger *slog.Logger) ([]workersinternal.Connector, error) {
+	connectors, err := workersinternal.NewConnectors(ctx, bunDB, logger)
 	if err != nil {
 		return nil, fmt.Errorf("new connectors: %w", err)
 	}
