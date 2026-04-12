@@ -43,22 +43,26 @@ func NewClient(
 	bunDB *bun.DB,
 	sessionPath string,
 	logger *slog.Logger,
-) (*Client, error) {
+) (c *Client, err error) {
 	// Open a dedicated SQLite database for the whatsmeow session.
 	sqliteDB, err := sql.Open("sqlite", "file:"+sessionPath+"?_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("open whatsapp session db: %w", err)
 	}
+	// Close sqliteDB on any error return; on success it is owned by Client.Stop().
+	defer func() {
+		if err != nil {
+			_ = sqliteDB.Close()
+		}
+	}()
 
 	container := sqlstore.NewWithDB(sqliteDB, "sqlite3", waLog.Noop)
 	if err = container.Upgrade(ctx); err != nil {
-		_ = sqliteDB.Close()
 		return nil, fmt.Errorf("whatsmeow db upgrade: %w", err)
 	}
 
 	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
-		_ = sqliteDB.Close()
 		return nil, fmt.Errorf("get whatsmeow device: %w", err)
 	}
 
@@ -67,23 +71,21 @@ func NewClient(
 	wac.AutomaticMessageRerequestFromPhone = false
 
 	wg := &sync.WaitGroup{}
-	c := &Client{wac: wac, logger: logger, wg: wg, sqliteDB: sqliteDB}
+	c = &Client{wac: wac, logger: logger, wg: wg, sqliteDB: sqliteDB}
 
 	// Connect first — QR flow or silent session resume.
 	if err = c.connect(ctx); err != nil {
-		_ = sqliteDB.Close()
 		return nil, err
 	}
 
 	// Anti-detection: set presence to unavailable immediately after connect.
-	if err = wac.SendPresence(ctx, types.PresenceUnavailable); err != nil {
-		logger.Warn("failed to set presence unavailable", "error", err)
+	if presenceErr := wac.SendPresence(ctx, types.PresenceUnavailable); presenceErr != nil {
+		logger.Warn("failed to set presence unavailable", "error", presenceErr)
 	}
 
 	// Discover all joined groups and sync to the database.
 	jidMap, srcMap, err := c.syncGroups(ctx, groupStore, groupSourceStore)
 	if err != nil {
-		_ = sqliteDB.Close()
 		return nil, fmt.Errorf("sync groups: %w", err)
 	}
 
