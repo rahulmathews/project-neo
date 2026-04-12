@@ -32,7 +32,7 @@ var (
 )
 
 // cleanLocationText strips trailing time/cost/distance metadata absorbed into a location match.
-// e.g. "Royal Spices at 9:55am (2.5 miles $5)" → "Royal Spices"
+// e.g. "Royal Spices at 9:55am (2.5 miles $5)" → "Royal Spices".
 func cleanLocationText(s string) string {
 	return strings.TrimSpace(locationTrailRe.ReplaceAllString(s, ""))
 }

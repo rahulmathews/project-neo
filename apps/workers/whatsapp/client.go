@@ -21,14 +21,16 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	_ "modernc.org/sqlite"
 )
 
 // Client implements internal.Connector for WhatsApp via whatsmeow.
 type Client struct {
-	wac     *whatsmeow.Client
-	handler *Handler
-	logger  *slog.Logger
-	wg      *sync.WaitGroup
+	wac       *whatsmeow.Client
+	handler   *Handler
+	logger    *slog.Logger
+	wg        *sync.WaitGroup
+	container *sqlstore.Container
 }
 
 // NewClient creates a whatsmeow client, connects to WhatsApp (QR on first run, silent
@@ -39,12 +41,23 @@ func NewClient(
 	groupStore *sharedpostgres.GroupStore,
 	groupSourceStore *sharedpostgres.GroupSourceStore,
 	bunDB *bun.DB,
-	sqlDB *sql.DB,
+	sessionPath string,
 	logger *slog.Logger,
-) (*Client, error) {
-	// Initialise the whatsmeow Postgres session store and run schema migrations.
-	container := sqlstore.NewWithDB(sqlDB, "postgres", waLog.Noop)
-	if err := container.Upgrade(ctx); err != nil {
+) (c *Client, err error) {
+	// Open a dedicated SQLite database for the whatsmeow session.
+	sqliteDB, err := sql.Open("sqlite", "file:"+sessionPath+"?_pragma=foreign_keys(1)")
+	if err != nil {
+		return nil, fmt.Errorf("open whatsapp session db: %w", err)
+	}
+
+	container := sqlstore.NewWithDB(sqliteDB, "sqlite3", waLog.Noop)
+	// Close container (which also closes sqliteDB) on any error return; on success it is owned by Client.Stop().
+	defer func() {
+		if err != nil {
+			_ = container.Close()
+		}
+	}()
+	if err = container.Upgrade(ctx); err != nil {
 		return nil, fmt.Errorf("whatsmeow db upgrade: %w", err)
 	}
 
@@ -58,16 +71,16 @@ func NewClient(
 	wac.AutomaticMessageRerequestFromPhone = false
 
 	wg := &sync.WaitGroup{}
-	c := &Client{wac: wac, logger: logger, wg: wg}
+	c = &Client{wac: wac, logger: logger, wg: wg, container: container}
 
 	// Connect first — QR flow or silent session resume.
-	if err := c.connect(ctx); err != nil {
+	if err = c.connect(ctx); err != nil {
 		return nil, err
 	}
 
 	// Anti-detection: set presence to unavailable immediately after connect.
-	if err := wac.SendPresence(ctx, types.PresenceUnavailable); err != nil {
-		logger.Warn("failed to set presence unavailable", "error", err)
+	if presenceErr := wac.SendPresence(ctx, types.PresenceUnavailable); presenceErr != nil {
+		logger.Warn("failed to set presence unavailable", "error", presenceErr)
 	}
 
 	// Discover all joined groups and sync to the database.
@@ -162,7 +175,8 @@ func (c *Client) connectWithQR(ctx context.Context) error {
 			case "code":
 				fmt.Println("\n=== Scan with WhatsApp → Linked Devices → Link a Device ===")
 				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
-				fmt.Println("=============================================================\n")
+				fmt.Println("=============================================================")
+				fmt.Println()
 			case "success":
 				return nil
 			case "timeout", "error":
@@ -181,8 +195,12 @@ func (c *Client) Start(_ context.Context) error {
 	return nil
 }
 
-// Stop disconnects the WhatsApp client and waits for all in-flight handlers to finish.
+// Stop disconnects the WhatsApp client, waits for all in-flight handlers to finish,
+// and closes the SQLite session database.
 func (c *Client) Stop() {
 	c.wac.Disconnect()
 	c.wg.Wait()
+	if err := c.container.Close(); err != nil {
+		c.logger.Error("failed to close whatsapp session db", "error", err)
+	}
 }

@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	haikuClient     anthropic.Client
-	haikuClientOnce sync.Once
+	haikuClient     anthropic.Client //nolint:gochecknoglobals // singleton lazy-init via sync.Once
+	haikuClientOnce sync.Once        //nolint:gochecknoglobals // singleton lazy-init via sync.Once
 )
 
 func getHaikuClient() (*anthropic.Client, error) {
