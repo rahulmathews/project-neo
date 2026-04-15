@@ -1,4 +1,4 @@
 {
-  "apps/workers": "0.0.0",
-  "apps/graphql-api": "0.0.0"
+  "apps/workers": "1.0.0",
+  "apps/graphql-api": "1.0.0"
 }
