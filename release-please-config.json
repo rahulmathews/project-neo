@@ -5,11 +5,13 @@
   "packages": {
     "apps/workers": {
       "component": "workers",
-      "release-type": "simple"
+      "release-type": "simple",
+      "initial-version": "0.0.1"
     },
     "apps/graphql-api": {
       "component": "graphql-api",
-      "release-type": "simple"
+      "release-type": "simple",
+      "initial-version": "0.0.1"
     }
   }
 }
