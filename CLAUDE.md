@@ -368,6 +368,24 @@ make dev-down         # Stop everything
 
 ## Development Workflow
 
+### Branching Strategy
+
+```
+feature/* ──┐
+fix/*     ──┼──► develop ──► (PR) ──► main ──► release-please ──► GitHub Release
+chore/*   ──┘
+```
+
+**Branches:**
+- `main` — always releasable; merges here trigger the release pipeline (release-please)
+- `develop` — staging/integration branch for unreleased features and in-progress work
+- `feature/*`, `fix/*`, `chore/*` — short-lived branches; PR target is `develop`, not `main`
+
+**Rules:**
+- All feature/fix/chore branches must target `develop` via PR
+- `develop` → `main` PR is opened when ready to cut a release
+- Never commit directly to `main` or `develop`
+
 ### Conventional Commits
 
 **Format**: `type(scope): subject`
