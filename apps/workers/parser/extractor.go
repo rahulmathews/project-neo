@@ -21,7 +21,7 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, logger *slog.L
 	if !hit {
 		// Step 2: regex miss → try Haiku
 		var err error
-		parsed, err = extractWithHaiku(ctx, msg.Content, groupName)
+		parsed, err = extractWithHaiku(ctx, msg.Content, groupName, logger)
 		if err != nil {
 			if errors.Is(err, ErrNotARide) {
 				logger.Info("parser: skipped (not a ride)", "msg_id", msg.ID)

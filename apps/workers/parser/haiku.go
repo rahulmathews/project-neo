@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 
@@ -43,7 +44,8 @@ type haikuResponse struct {
 // extractWithHaiku calls Claude Haiku to parse a freeform message.
 // Returns ErrNotARide if the message is not a ride request/offer.
 // Returns an error wrapping "ANTHROPIC_API_KEY not configured" if the key is missing.
-func extractWithHaiku(ctx context.Context, content string, groupName string) (*ParsedRide, error) {
+// nolint:funlen // function length due to system prompt construction; acceptable for this use case
+func extractWithHaiku(ctx context.Context, content string, groupName string, logger *slog.Logger) (*ParsedRide, error) {
 	client, err := getHaikuClient()
 	if err != nil {
 		return nil, err
@@ -118,6 +120,13 @@ If this is not a ride message at all, set not_a_ride_message: true.`, groupName)
 	default:
 		return nil, fmt.Errorf("haiku: unknown ride_type %q", *hr.RideType)
 	}
+
+	logger.Debug("haiku parsed (regex miss)",
+		"content", content,
+		"ride_type", parsed.RideType,
+		"from", parsed.FromLocationText,
+		"to", parsed.ToLocationText,
+	)
 
 	return parsed, nil
 }
