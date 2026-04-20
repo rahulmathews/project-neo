@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 6, 2026 (session 4)
+**Last Updated**: April 19, 2026 (session 5)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -120,12 +120,16 @@
 - [x] Prevent duplicate rides for same content hash in group
 - [x] End-to-end verification (WhatsApp → pg_notify → parse → ride row confirmed working)
 
+### ✅ Completed — Workers Error Handling & Retry
+- [x] Retry-with-backoff for transient parser failures (3 attempts, 5s → 15s → 45s)
+- [x] Startup recovery sweep for stale PENDING messages (`retry_count > 0`)
+- [x] `retry_count` column added to `messages` table (migration written)
+- [x] DEBUG logging of Haiku-parsed messages for regex corpus building
+
 ### 📋 Workers Service — Pending
 - [ ] Set up additional message source connectors
   - [ ] Telegram connector (go-telegram-bot-api)
   - [ ] Manual entry connector
-- [ ] Background job processing
-  - [ ] Error handling and retries
 - [ ] Add logging and monitoring
 
 ### 📋 Flutter Mobile App (`apps/mobile`) — Not Started
@@ -224,5 +228,5 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. Add error handling and retries for parser pipeline
+1. ✅ Parser error handling and retries — PR #28 open against develop
 2. Begin Flutter mobile app scaffold (`apps/mobile`)
