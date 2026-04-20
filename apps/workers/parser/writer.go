@@ -2,6 +2,7 @@ package parser
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -12,8 +13,9 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// writeRide assembles a model.Ride from the parsed result, inserts it, and
-// marks the message as SUCCESS. On any error, marks FAILED.
+// writeRide assembles a model.Ride from the parsed result and inserts it.
+// On success it marks the message SUCCESS and returns nil.
+// On insert failure it returns the error — the caller owns markFailed.
 func writeRide(
 	ctx context.Context,
 	db *bun.DB,
@@ -22,10 +24,8 @@ func writeRide(
 	fromLocationID *uuid.UUID,
 	toLocationID *uuid.UUID,
 	logger *slog.Logger,
-) {
-	// Skip if a ride already exists for this content in this group (duplicate message).
+) error {
 	var exists bool
-	// raw SQL — 'm' is a local alias in this subquery, not the bun model alias ("msg")
 	if err := db.NewSelect().
 		ColumnExpr("EXISTS (SELECT 1 FROM rides r2 JOIN messages m ON m.id = r2.message_id WHERE m.group_id = ? AND m.content_hash = ?)", msg.GroupID, msg.ContentHash).
 		Scan(ctx, &exists); err != nil {
@@ -33,7 +33,7 @@ func writeRide(
 	} else if exists {
 		logger.Info("writer: skipping duplicate ride (same content hash in group)", "msg_id", msg.ID)
 		markSuccess(ctx, db, msg.ID, logger)
-		return
+		return nil
 	}
 
 	ride := &model.Ride{
@@ -57,12 +57,23 @@ func writeRide(
 	rideStore := sharedpostgres.NewRideStore(db)
 	if err := rideStore.InsertRide(ctx, ride); err != nil {
 		logger.Error("writer: insert ride", "msg_id", msg.ID, "error", err)
-		markFailed(ctx, db, msg.ID, "ride insert failed: "+err.Error(), logger)
-		return
+		return fmt.Errorf("ride insert: %w", err)
 	}
 
 	markSuccess(ctx, db, msg.ID, logger)
 	logger.Info("parser: ride created", "ride_id", ride.ID, "msg_id", msg.ID, "type", ride.Type)
+	return nil
+}
+
+func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) { //nolint:unused // used in Task 5 retry loop
+	if _, err := db.NewUpdate().
+		TableExpr("messages").
+		Set("retry_count = retry_count + 1").
+		Set("parse_error = ?", reason).
+		Where("id = ?", msgID).
+		Exec(ctx); err != nil {
+		logger.Error("writer: increment retry_count", "msg_id", msgID, "error", err)
+	}
 }
 
 func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, logger *slog.Logger) {

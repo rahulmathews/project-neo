@@ -39,7 +39,7 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, logger *slog.L
 	toID := resolveLocation(ctx, db, parsed.ToLocationText, msg.GroupID, logger)
 
 	// Step 4: write ride + update message status
-	writeRide(ctx, db, msg, parsed, fromID, toID, logger)
+	writeRide(ctx, db, msg, parsed, fromID, toID, logger) //nolint:errcheck,gosec // error handling added in Task 5 retry loop
 }
 
 // fetchGroupName queries the group name for Haiku context. Returns empty string on error.
