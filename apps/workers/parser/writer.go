@@ -65,7 +65,7 @@ func writeRide(
 	return nil
 }
 
-func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) { //nolint:unused // used in Task 5 retry loop
+func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) {
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("retry_count = retry_count + 1").
