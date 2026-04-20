@@ -20,13 +20,13 @@ const (
 // Process runs the full extraction pipeline for a single PENDING message,
 // retrying up to maxRetries times on transient errors with exponential backoff.
 // It is safe to call concurrently — each call operates on its own message.
-func Process(ctx context.Context, msg *model.Message, db *bun.DB, logger *slog.Logger) {
+func Process(ctx context.Context, msg *model.Message, db *bun.DB, provider LLMProvider, logger *slog.Logger) {
 	groupName := fetchGroupName(ctx, db, msg)
 
 	backoff := baseBackoff
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		// Step 1: extract
-		parsed, done := extract(ctx, db, msg, groupName, attempt, &backoff, logger)
+		parsed, done := extract(ctx, db, msg, groupName, attempt, &backoff, provider, logger)
 		if done && parsed == nil {
 			return
 		}
@@ -55,7 +55,7 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, logger *slog.L
 	}
 }
 
-// extract attempts regex extraction, falling back to Haiku.
+// extract attempts regex extraction, falling back to the LLM provider.
 // Returns (parsed, done): if done=true+parsed=nil → caller should return;
 // if done=false+parsed=nil → caller should continue to next attempt.
 func extract(
@@ -65,6 +65,7 @@ func extract(
 	groupName string,
 	attempt int,
 	backoff *time.Duration,
+	provider LLMProvider,
 	logger *slog.Logger,
 ) (*ParsedRide, bool) {
 	parsed, hit := extractWithRegex(msg.Content)
@@ -73,7 +74,7 @@ func extract(
 	}
 
 	var err error
-	parsed, err = extractWithHaiku(ctx, msg.Content, groupName, logger)
+	parsed, err = provider.Extract(ctx, msg.Content, groupName)
 	if err == nil {
 		return parsed, false
 	}
@@ -105,7 +106,7 @@ func sleep(ctx context.Context, d time.Duration) {
 	}
 }
 
-// fetchGroupName queries the group name for Haiku context. Returns empty string on error.
+// fetchGroupName queries the group name for LLM provider context. Returns empty string on error.
 func fetchGroupName(ctx context.Context, db *bun.DB, msg *model.Message) string {
 	var g model.Group
 	if err := db.NewSelect().

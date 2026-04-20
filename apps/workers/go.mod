@@ -3,10 +3,10 @@ module project-neo/workers
 go 1.25.0
 
 require (
-	github.com/anthropics/anthropic-sdk-go v1.30.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
 	github.com/mdp/qrterminal/v3 v3.2.1
+	github.com/openai/openai-go v1.12.0
 	github.com/uptrace/bun v1.2.18
 	go.mau.fi/whatsmeow v0.0.0-20260327181659-02ec817e7cf4
 	modernc.org/sqlite v1.48.2
@@ -44,7 +44,6 @@ require (
 	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

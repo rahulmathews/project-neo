@@ -7,7 +7,7 @@ import (
 	"project-neo/shared/model"
 )
 
-// ErrNotARide is returned by extractWithHaiku when the message is clearly not
+// ErrNotARide is returned by LLMProvider.Extract when the message is clearly not
 // a ride request or offer. The extractor marks parse_status = SKIPPED.
 var ErrNotARide = errors.New("not a ride message")
 
