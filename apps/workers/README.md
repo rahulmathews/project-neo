@@ -18,9 +18,10 @@ apps/workers/
 │  └─ handler.go              Message event handler — stores message, triggers parser
 └─ parser/
    ├─ listener.go             Polls DB for PENDING messages, dispatches Process()
-   ├─ extractor.go            Process() — regex → Haiku → location resolve → write ride
+   ├─ extractor.go            Process() — regex → LLM provider → location resolve → write ride
    ├─ regex.go                Regex-based ride extraction
-   ├─ haiku.go                Claude Haiku AI extraction (fallback when regex misses)
+   ├─ provider.go             LLMProvider interface + NewLLMProvider factory
+   ├─ ollama.go               Ollama AI extraction (fallback when regex misses; local or cloud)
    ├─ location.go             Resolves location aliases via location_contexts table
    ├─ writer.go               Writes ride to DB, updates message parse status
    └─ types.go                ParsedRide type
@@ -33,7 +34,9 @@ Connects to: Supabase PostgreSQL (`DATABASE_URL`). Writes to `messages` and `rid
 | Variable | Description | Example | Required | Notes |
 |----------|-------------|---------|----------|-------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:54322/postgres?sslmode=disable` | Yes | Must include `?sslmode=disable` — local Supabase does not use SSL |
-| `ANTHROPIC_API_KEY` | Claude Haiku API key for AI-based message parsing | `sk-ant-...` | No | If unset, messages that don't match regex are marked `FAILED` instead of parsed by AI |
+| `OLLAMA_BASE_URL` | Ollama API base URL | `http://localhost:11434/v1` | No | Set to `https://ollama.com/v1` for Ollama Cloud. Defaults to local. |
+| `OLLAMA_API_KEY` | Ollama Cloud API token | _(your token)_ | No | Leave empty for local (unauthenticated). Not the same as `OPENAI_API_KEY`. |
+| `OLLAMA_MODEL` | Model name used for parsing | `qwen2.5:3b` | No | Any model available in your Ollama instance |
 | `PORT` | Health server bind port | `8083` | No | Defaults to `8083` |
 
 ## Running Locally
@@ -87,7 +90,7 @@ Incoming WhatsApp/Telegram message
         ├── Step 1: extractWithRegex(content)
         │     match → parsed ride fields
         │     no match ↓
-        ├── Step 2: extractWithHaiku(content, groupName)
+        ├── Step 2: provider.Extract(content, groupName)
         │     not-a-ride → mark SKIPPED
         │     error → mark FAILED
         │
