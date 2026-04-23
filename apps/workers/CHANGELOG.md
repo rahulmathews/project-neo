@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.2](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.1...workers-v0.0.2) (2026-04-23)
+
+
+### Features
+
+* **workers:** add incrementRetryCount helper; writeRide returns error ([3f3a5cb](https://github.com/rahulmathews/project-neo/commit/3f3a5cba9177664a5166e0a6b0fa32584e75f013))
+* **workers:** add logger param to extractWithHaiku; log haiku hits at DEBUG ([90f47b3](https://github.com/rahulmathews/project-neo/commit/90f47b387a24fef07992505a711cfa4b66b2b745))
+* **workers:** add retry loop with exponential backoff to parser pipeline ([f68f49b](https://github.com/rahulmathews/project-neo/commit/f68f49bdaffd89d439b10bddc0439758fc82be9f))
+* **workers:** add StartRecovery startup sweep for stale PENDING messages ([d11c87f](https://github.com/rahulmathews/project-neo/commit/d11c87f2f5e638c2cd3d5bf87c942381598503f7))
+* **workers:** parser retry with exponential backoff and startup recovery ([b134283](https://github.com/rahulmathews/project-neo/commit/b134283c83350bc66c43b9064ddc3e22c248a1c2))
+* **workers:** replace Anthropic SDK with Ollama LLM provider ([f4d4c0c](https://github.com/rahulmathews/project-neo/commit/f4d4c0c6ea5b58086dc1d1f790e8710b5c5cf7d6))
+* **workers:** wire StartRecovery at startup before listener ([dce69bc](https://github.com/rahulmathews/project-neo/commit/dce69bcb597b4449a9a2390122ddf4bdfd0e0499))
+
 ## 0.0.1 (2026-04-19)
 
 
