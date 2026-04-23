@@ -12,9 +12,7 @@ class ErrorView extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Text(
           message,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.error,
-          ),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
           textAlign: TextAlign.center,
         ),
       ),

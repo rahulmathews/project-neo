@@ -13,51 +13,52 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get dark => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: _scaffoldBg,
-    colorScheme: const ColorScheme.dark(
-      surface: _surface,
-      primary: _primary,
-      error: _error,
-      onSurface: _onSurface,
-      onSurfaceVariant: _onSurfaceVariant,
-    ),
-    textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-      displayLarge: GoogleFonts.interTight(
-        fontWeight: FontWeight.bold,
-        color: _onSurface,
-      ),
-      displayMedium: GoogleFonts.interTight(
-        fontWeight: FontWeight.bold,
-        color: _onSurface,
-      ),
-      displaySmall: GoogleFonts.interTight(
-        fontWeight: FontWeight.bold,
-        color: _onSurface,
-      ),
-      headlineLarge: GoogleFonts.interTight(
-        fontWeight: FontWeight.bold,
-        color: _onSurface,
-      ),
-      headlineMedium: GoogleFonts.interTight(
-        fontWeight: FontWeight.w600,
-        color: _onSurface,
-      ),
-      headlineSmall: GoogleFonts.interTight(
-        fontWeight: FontWeight.w600,
-        color: _onSurface,
-      ),
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: _surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: _cardBorder),
-      ),
-    ),
-    drawerTheme: const DrawerThemeData(backgroundColor: _surface),
-    dividerColor: _cardBorder,
-  );
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: _scaffoldBg,
+        colorScheme: const ColorScheme.dark(
+          surface: _surface,
+          primary: _primary,
+          error: _error,
+          onSurface: _onSurface,
+          onSurfaceVariant: _onSurfaceVariant,
+        ),
+        textTheme:
+            GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
+          displayLarge: GoogleFonts.interTight(
+            fontWeight: FontWeight.bold,
+            color: _onSurface,
+          ),
+          displayMedium: GoogleFonts.interTight(
+            fontWeight: FontWeight.bold,
+            color: _onSurface,
+          ),
+          displaySmall: GoogleFonts.interTight(
+            fontWeight: FontWeight.bold,
+            color: _onSurface,
+          ),
+          headlineLarge: GoogleFonts.interTight(
+            fontWeight: FontWeight.bold,
+            color: _onSurface,
+          ),
+          headlineMedium: GoogleFonts.interTight(
+            fontWeight: FontWeight.w600,
+            color: _onSurface,
+          ),
+          headlineSmall: GoogleFonts.interTight(
+            fontWeight: FontWeight.w600,
+            color: _onSurface,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: _surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: _cardBorder),
+          ),
+        ),
+        drawerTheme: const DrawerThemeData(backgroundColor: _surface),
+        dividerColor: _cardBorder,
+      );
 }

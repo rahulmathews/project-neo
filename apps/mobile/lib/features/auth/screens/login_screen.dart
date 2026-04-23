@@ -59,9 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Neo',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
