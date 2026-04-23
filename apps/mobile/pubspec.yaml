@@ -1,0 +1,30 @@
+name: mobile
+description: Project Neo mobile app
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  go_router: ^14.0.0
+  supabase_flutter: ^2.5.0
+  graphql_flutter: ^5.2.0
+  google_fonts: ^6.0.0
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  riverpod_generator: ^2.6.5
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fonts/Inter-Regular.ttf
+    - assets/fonts/Inter-Medium.ttf
+    - assets/fonts/Inter-SemiBold.ttf
+    - assets/fonts/Inter-Bold.ttf
+    - assets/fonts/InterTight-Variable.ttf
