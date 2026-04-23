@@ -1,5 +1,7 @@
 [![CI](https://github.com/rahulmathews/project-neo/actions/workflows/ci.yml/badge.svg)](https://github.com/rahulmathews/project-neo/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/rahulmathews/project-neo?include_prereleases)](https://github.com/rahulmathews/project-neo/releases)
+[![workers](https://img.shields.io/github/v/tag/rahulmathews/project-neo?filter=workers-*&label=workers)](https://github.com/rahulmathews/project-neo/releases?q=workers)
+[![graphql-api](https://img.shields.io/github/v/tag/rahulmathews/project-neo?filter=graphql-api-*&label=graphql-api)](https://github.com/rahulmathews/project-neo/releases?q=graphql-api)
+[![mobile](https://img.shields.io/github/v/tag/rahulmathews/project-neo?filter=mobile-*&label=mobile)](https://github.com/rahulmathews/project-neo/releases?q=mobile)
 [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-brightgreen.svg)](https://github.com/rahulmathews/project-neo/network/updates)
 
 # Project Neo
@@ -112,7 +114,7 @@ curl http://localhost:8082/health    # → {"status":"ok","service":"graphql-api
 | graphql-api | GraphQL API for rides, matches, groups | 8082 | [apps/graphql-api](apps/graphql-api/README.md) |
 | shared-go | Shared Go models and repository interfaces | — | [packages/shared-go](packages/shared-go/README.md) |
 | supabase | Local PostgreSQL + Realtime + Auth + Studio (54323) | 54321 | [supabase](supabase/README.md) |
-| mobile | Flutter mobile app (iOS + Android) — not yet started | — | — |
+| mobile | Flutter mobile app (iOS + Android) — auth, drawer nav, GraphQL client | — | [apps/mobile](apps/mobile/README.md) |
 
 ## Development Commands
 
