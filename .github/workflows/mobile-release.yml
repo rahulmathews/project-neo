@@ -13,6 +13,7 @@ jobs:
   android:
     name: Build Android APK
     runs-on: ubuntu-latest
+    environment: runner-env
     permissions:
       contents: write
 
@@ -58,6 +59,7 @@ jobs:
   ios:
     name: Build iOS IPA
     runs-on: macos-latest
+    environment: runner-env
     permissions:
       contents: write
 
