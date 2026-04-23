@@ -49,7 +49,9 @@ func run() error {
 	}
 	srv := startHealthServer(port, logger)
 
-	go parser.StartListener(ctx, databaseURL, bunDB, logger)
+	provider := parser.NewLLMProvider(logger)
+	go parser.StartRecovery(ctx, bunDB, provider, logger)
+	go parser.StartListener(ctx, databaseURL, bunDB, provider, logger)
 
 	waitForShutdown(cancel, connectors, srv, logger)
 	return nil

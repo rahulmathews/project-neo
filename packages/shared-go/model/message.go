@@ -32,6 +32,7 @@ type Message struct {
 	ParsedAt         *time.Time  `bun:"parsed_at"`
 	ParseStatus      ParseStatus `bun:"parse_status"`
 	ParseError       *string     `bun:"parse_error"`
+	RetryCount       int         `bun:"retry_count"`
 	CreatedAt        time.Time   `bun:"created_at,nullzero"`
 }
 
