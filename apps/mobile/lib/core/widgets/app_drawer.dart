@@ -13,13 +13,13 @@ class ScaffoldWithDrawer extends StatelessWidget {
   final Widget child;
 
   String get _title => switch (location) {
-        '/home' => 'Home',
-        '/rides' => 'Available Rides',
-        '/matches' => 'My Matches',
-        '/profile' => 'Profile',
-        '/settings' => 'Settings',
-        _ => 'Neo',
-      };
+    '/home' => 'Home',
+    '/rides' => 'Available Rides',
+    '/matches' => 'My Matches',
+    '/profile' => 'Profile',
+    '/settings' => 'Settings',
+    _ => 'Neo',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +56,8 @@ class AppDrawer extends StatelessWidget {
                 Text(
                   email,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

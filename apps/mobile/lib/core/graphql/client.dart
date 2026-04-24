@@ -26,8 +26,8 @@ GraphQLClient graphQLClient(Ref ref) {
   final wsLink = WebSocketLink(
     const String.fromEnvironment('GRAPHQL_WS_URL'),
     config: SocketClientConfig(
-      initialPayload: () async =>
-          bearerToken != null ? {'Authorization': bearerToken} : {},
+      initialPayload:
+          () async => bearerToken != null ? {'Authorization': bearerToken} : {},
     ),
   );
 
