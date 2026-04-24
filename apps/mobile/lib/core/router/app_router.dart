@@ -57,19 +57,17 @@ GoRouter appRouter(Ref ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
       ),
       ShellRoute(
-        builder: (context, state, child) => ScaffoldWithDrawer(
-          location: state.matchedLocation,
-          child: child,
-        ),
+        builder:
+            (context, state, child) => ScaffoldWithDrawer(
+              location: state.matchedLocation,
+              child: child,
+            ),
         routes: [
           GoRoute(
             path: '/home',

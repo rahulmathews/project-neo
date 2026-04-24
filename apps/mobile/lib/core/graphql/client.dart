@@ -19,30 +19,21 @@ GraphQLClient graphQLClient(Ref ref) {
   // AuthLink injects JWT into HTTP request headers (queries + mutations)
   final authLink = AuthLink(getToken: () async => bearerToken);
 
-  final httpLink = HttpLink(
-    const String.fromEnvironment('GRAPHQL_API_URL'),
-  );
+  final httpLink = HttpLink(const String.fromEnvironment('GRAPHQL_API_URL'));
 
   // WebSocketLink does NOT forward AuthLink headers.
   // JWT is passed via connectionParams (initialPayload) instead.
   final wsLink = WebSocketLink(
     const String.fromEnvironment('GRAPHQL_WS_URL'),
     config: SocketClientConfig(
-      initialPayload: () async =>
-          bearerToken != null ? {'Authorization': bearerToken} : {},
+      initialPayload:
+          () async => bearerToken != null ? {'Authorization': bearerToken} : {},
     ),
   );
 
   final link = authLink.concat(
-    Link.split(
-      (request) => request.isSubscription,
-      wsLink,
-      httpLink,
-    ),
+    Link.split((request) => request.isSubscription, wsLink, httpLink),
   );
 
-  return GraphQLClient(
-    link: link,
-    cache: GraphQLCache(),
-  );
+  return GraphQLClient(link: link, cache: GraphQLCache());
 }
