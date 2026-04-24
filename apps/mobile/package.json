@@ -1,0 +1,10 @@
+{
+  "name": "@project-neo/mobile",
+  "private": true,
+  "scripts": {
+    "build": "flutter analyze",
+    "dev": "flutter run --dart-define-from-file=.env.json",
+    "lint": "flutter analyze",
+    "format:check": "dart format --output=none --set-exit-if-changed lib/"
+  }
+}

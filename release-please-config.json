@@ -12,6 +12,11 @@
       "component": "graphql-api",
       "release-type": "simple",
       "initial-version": "0.0.1"
+    },
+    "apps/mobile": {
+      "component": "mobile",
+      "release-type": "flutter",
+      "initial-version": "0.0.1"
     }
   }
 }

@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 19, 2026 (session 5)
+**Last Updated**: April 21, 2026 (session 7)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -132,11 +132,11 @@
   - [ ] Manual entry connector
 - [ ] Add logging and monitoring
 
-### 📋 Flutter Mobile App (`apps/mobile`) — Not Started
-- [ ] Initialize Flutter project
-- [ ] Set up project structure
-  - [ ] Features-based architecture
-  - [ ] State management (Riverpod/Bloc/Provider - TBD)
+### ✅ Completed — Flutter Mobile App Scaffold (`apps/mobile`)
+- [x] Initialize Flutter project
+- [x] Set up project structure
+  - [x] Features-based architecture
+  - [x] State management: Riverpod (riverpod_generator + code-gen)
 - [ ] Core features
   - [ ] Authentication (Supabase Auth)
   - [ ] Ride listing (available rides)
@@ -228,5 +228,7 @@
 ## Current Status Summary
 
 **Next Immediate Tasks**:
-1. ✅ Parser error handling and retries — PR #28 open against develop
-2. Begin Flutter mobile app scaffold (`apps/mobile`)
+1. ✅ Parser error handling and retries — merged
+2. ✅ Flutter mobile scaffold — design spec + implementation plan written
+3. ✅ Implement Flutter mobile scaffold per `docs/superpowers/plans/2026-04-21-flutter-mobile-scaffold.md`
+4. Implement ride listing screen (fetch rides from GraphQL API)
