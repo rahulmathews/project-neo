@@ -15,7 +15,7 @@
     },
     "apps/mobile": {
       "component": "mobile",
-      "release-type": "flutter",
+      "release-type": "dart",
       "initial-version": "0.0.1"
     }
   }
