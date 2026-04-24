@@ -1,5 +1,5 @@
 {
-  "apps/workers": "0.0.1",
+  "apps/workers": "0.0.2",
   "apps/graphql-api": "0.0.1",
   "apps/mobile": "0.0.1"
 }
