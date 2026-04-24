@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.2...workers-v0.0.3) (2026-04-24)
+
+
+### Bug Fixes
+
+* resolved conflicts ([797c209](https://github.com/rahulmathews/project-neo/commit/797c209b0894180cab2d1ea26d7539fe947b370f))
+
 ## [0.0.2](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.1...workers-v0.0.2) (2026-04-23)
 
 
