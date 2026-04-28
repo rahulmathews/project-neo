@@ -54,7 +54,7 @@ func (r *mutationResolver) CancelRide(ctx context.Context, id uuid.UUID) (*model
 
 // AcceptMatch is the resolver for the acceptMatch field.
 func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*model.Match, error) {
-	driverID, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,18 @@ func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*
 	if ride.Status != model.RideStatusAvailable {
 		return nil, fmt.Errorf("ride is not available")
 	}
-	match, err := r.Resolver.Matches.Create(ctx, rideID, *ride.PosterUserID, driverID)
+	if *ride.PosterUserID == userID {
+		return nil, fmt.Errorf("cannot match with your own ride")
+	}
+
+	riderID := userID
+	driverID := *ride.PosterUserID
+	if ride.Type == model.RideTypeNeedRide {
+		riderID = *ride.PosterUserID
+		driverID = userID
+	}
+
+	match, err := r.Resolver.Matches.Create(ctx, rideID, riderID, driverID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,19 +95,34 @@ func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*
 
 // RejectMatch is the resolver for the rejectMatch field.
 func (r *mutationResolver) RejectMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
+	}
+	match, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	if match.RiderID != userID && match.DriverID != userID {
+		return nil, fmt.Errorf("forbidden")
 	}
 	return r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusRejected)
 }
 
 // CompleteMatch is the resolver for the completeMatch field.
 func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
+	currentMatch, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	if currentMatch.RiderID != userID && currentMatch.DriverID != userID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
 	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCompleted)
 	if err != nil {
 		return nil, err
@@ -109,10 +135,18 @@ func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID)
 
 // CancelMatch is the resolver for the cancelMatch field.
 func (r *mutationResolver) CancelMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
+	currentMatch, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	if currentMatch.RiderID != userID && currentMatch.DriverID != userID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
 	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCancelled)
 	if err != nil {
 		return nil, err
