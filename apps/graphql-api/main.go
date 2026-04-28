@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"project-neo/graphql-api/graph/generated"
@@ -78,6 +79,28 @@ func run() error {
 	gqlSrv.AddTransport(transport.MultipartForm{})
 	gqlSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
+		InitFunc: func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
+			token := ""
+			for _, key := range []string{"Authorization", "authorization"} {
+				if v := initPayload.GetString(key); strings.HasPrefix(v, "Bearer ") {
+					token = strings.TrimSpace(strings.TrimPrefix(v, "Bearer "))
+					break
+				}
+			}
+			if token == "" {
+				for _, key := range []string{"token", "access_token"} {
+					if v := strings.TrimSpace(initPayload.GetString(key)); v != "" {
+						token = strings.TrimPrefix(v, "Bearer ")
+						token = strings.TrimSpace(token)
+						break
+					}
+				}
+			}
+			if token != "" {
+				ctx = auth.ContextWithToken(ctx, token, jwtSecret)
+			}
+			return ctx, nil
+		},
 	})
 
 	mux := http.NewServeMux()
