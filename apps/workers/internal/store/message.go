@@ -61,8 +61,12 @@ func (w *MessageWriter) Write(
 		ParseStatus:      model.ParseStatusPending,
 	}
 
-	if err := w.store.Insert(ctx, msg); err != nil {
+	inserted, err := w.store.Insert(ctx, msg)
+	if err != nil {
 		return false, err
+	}
+	if !inserted {
+		return false, nil
 	}
 	return true, nil
 }
