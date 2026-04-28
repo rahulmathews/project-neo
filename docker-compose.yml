@@ -20,7 +20,7 @@ services:
       - neo-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8083/health"]
+      test: ["CMD", "/workers", "healthcheck"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -41,7 +41,7 @@ services:
       - neo-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8082/health"]
+      test: ["CMD", "/graphql-api", "healthcheck"]
       interval: 15s
       timeout: 5s
       retries: 3
