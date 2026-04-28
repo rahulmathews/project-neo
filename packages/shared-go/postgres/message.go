@@ -21,17 +21,21 @@ func NewMessageStore(db *bun.DB) *MessageStore {
 	return &MessageStore{db: db}
 }
 
-// Insert writes a message row. If source_message_id is set and a row with the same
-// (group_id, source_message_id) already exists, the insert is silently skipped.
-func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) error {
-	_, err := s.db.NewInsert().
+// Insert writes a message row.
+// Returns inserted=false when source_message_id conflicts with an existing row.
+func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, error) {
+	res, err := s.db.NewInsert().
 		Model(msg).
 		On("CONFLICT ON CONSTRAINT messages_group_id_source_message_id_key DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("insert message: %w", err)
+		return false, fmt.Errorf("insert message: %w", err)
 	}
-	return nil
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("insert message rows affected: %w", err)
+	}
+	return n > 0, nil
 }
 
 // ExistsByHash checks whether a message with the same group, content hash, and exact
