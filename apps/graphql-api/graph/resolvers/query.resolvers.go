@@ -72,28 +72,16 @@ func (r *queryResolver) MyMatches(ctx context.Context, limit *int, offset *int) 
 
 // Groups is the resolver for the groups field.
 func (r *queryResolver) Groups(ctx context.Context) ([]*sharedmodel.Group, error) {
-	_, err := auth.UserIDFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return r.Resolver.Groups.List(ctx)
 }
 
 // Group is the resolver for the group field.
 func (r *queryResolver) Group(ctx context.Context, id uuid.UUID) (*sharedmodel.Group, error) {
-	_, err := auth.UserIDFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return r.Resolver.Groups.GetByID(ctx, id)
 }
 
 // Locations is the resolver for the locations field.
 func (r *queryResolver) Locations(ctx context.Context, query string) ([]*sharedmodel.Location, error) {
-	_, err := auth.UserIDFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return r.Resolver.Locations.Search(ctx, query)
 }
 
