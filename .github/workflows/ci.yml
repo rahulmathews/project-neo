@@ -65,7 +65,7 @@ jobs:
       - name: Install Go tools
         run: |
           go install mvdan.cc/gofumpt@v0.8.0
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.2.2
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 
       - name: Install Flutter dependencies
         working-directory: apps/mobile
