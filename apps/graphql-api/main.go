@@ -79,28 +79,7 @@ func run() error {
 	gqlSrv.AddTransport(transport.MultipartForm{})
 	gqlSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
-		InitFunc: func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
-			token := ""
-			for _, key := range []string{"Authorization", "authorization"} {
-				if v := initPayload.GetString(key); strings.HasPrefix(v, "Bearer ") {
-					token = strings.TrimSpace(strings.TrimPrefix(v, "Bearer "))
-					break
-				}
-			}
-			if token == "" {
-				for _, key := range []string{"token", "access_token"} {
-					if v := strings.TrimSpace(initPayload.GetString(key)); v != "" {
-						token = strings.TrimPrefix(v, "Bearer ")
-						token = strings.TrimSpace(token)
-						break
-					}
-				}
-			}
-			if token != "" {
-				ctx = auth.ContextWithToken(ctx, token, jwtSecret)
-			}
-			return ctx, nil
-		},
+		InitFunc:              websocketInitFunc(jwtSecret),
 	})
 
 	mux := http.NewServeMux()
@@ -121,4 +100,28 @@ func run() error {
 
 	log.Printf("graphql-api listening on :%s", port)
 	return httpSrv.ListenAndServe()
+}
+
+func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
+	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, *transport.InitPayload, error) {
+		token := ""
+		for _, key := range []string{"Authorization", "authorization"} {
+			if v := initPayload.GetString(key); strings.HasPrefix(v, "Bearer ") {
+				token = strings.TrimSpace(strings.TrimPrefix(v, "Bearer "))
+				break
+			}
+		}
+		if token == "" {
+			for _, key := range []string{"token", "access_token"} {
+				if v := strings.TrimSpace(initPayload.GetString(key)); v != "" {
+					token = strings.TrimSpace(strings.TrimPrefix(v, "Bearer "))
+					break
+				}
+			}
+		}
+		if token != "" {
+			ctx = auth.ContextWithToken(ctx, token, jwtSecret)
+		}
+		return ctx, nil, nil
+	}
 }
