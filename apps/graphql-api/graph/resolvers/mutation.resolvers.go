@@ -84,8 +84,11 @@ func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*
 
 // RejectMatch is the resolver for the rejectMatch field.
 func (r *mutationResolver) RejectMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := r.ensureMatchParticipant(ctx, matchID, userID); err != nil {
 		return nil, err
 	}
 	return r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusRejected)
@@ -93,8 +96,11 @@ func (r *mutationResolver) RejectMatch(ctx context.Context, matchID uuid.UUID) (
 
 // CompleteMatch is the resolver for the completeMatch field.
 func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := r.ensureMatchParticipant(ctx, matchID, userID); err != nil {
 		return nil, err
 	}
 	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCompleted)
@@ -109,8 +115,11 @@ func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID)
 
 // CancelMatch is the resolver for the cancelMatch field.
 func (r *mutationResolver) CancelMatch(ctx context.Context, matchID uuid.UUID) (*model.Match, error) {
-	_, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := r.ensureMatchParticipant(ctx, matchID, userID); err != nil {
 		return nil, err
 	}
 	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCancelled)
@@ -145,3 +154,14 @@ func (r *mutationResolver) UpsertLocationContext(ctx context.Context, input mode
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
+
+func (r *mutationResolver) ensureMatchParticipant(ctx context.Context, matchID, userID uuid.UUID) error {
+	match, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	if err != nil {
+		return err
+	}
+	if match.RiderID != userID && match.DriverID != userID {
+		return fmt.Errorf("forbidden")
+	}
+	return nil
+}
