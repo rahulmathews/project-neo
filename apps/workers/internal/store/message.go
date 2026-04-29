@@ -41,7 +41,8 @@ func (w *MessageWriter) Write(
 
 	// For messages with no WhatsApp message ID, check exact hash+timestamp match.
 	if sourceMessageID == nil {
-		exists, err := w.store.ExistsByHash(ctx, groupID, hash, timestamp)
+		var exists bool
+		exists, err = w.store.ExistsByHash(ctx, groupID, hash, timestamp)
 		if err != nil {
 			return false, err
 		}
