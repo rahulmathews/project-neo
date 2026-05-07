@@ -66,8 +66,5 @@ func (w *MessageWriter) Write(
 	if err != nil {
 		return false, err
 	}
-	if !inserted {
-		return false, nil
-	}
-	return true, nil
+	return inserted, nil
 }

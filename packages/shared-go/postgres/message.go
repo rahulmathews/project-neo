@@ -32,11 +32,11 @@ func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, er
 	if err != nil {
 		return false, fmt.Errorf("insert message: %w", err)
 	}
-	rows, err := res.RowsAffected()
+	n, err := res.RowsAffected()
 	if err != nil {
 		return false, fmt.Errorf("insert message rows affected: %w", err)
 	}
-	return rows > 0, nil
+	return n > 0, nil
 }
 
 // ExistsByHash checks whether a message with the same group, content hash, and exact
