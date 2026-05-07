@@ -54,7 +54,7 @@ func (r *mutationResolver) CancelRide(ctx context.Context, id uuid.UUID) (*model
 
 // AcceptMatch is the resolver for the acceptMatch field.
 func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*model.Match, error) {
-	driverID, err := auth.UserIDFromCtx(ctx)
+	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,18 @@ func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*
 	if ride.Status != model.RideStatusAvailable {
 		return nil, fmt.Errorf("ride is not available")
 	}
-	match, err := r.Resolver.Matches.Create(ctx, rideID, *ride.PosterUserID, driverID)
+	if *ride.PosterUserID == userID {
+		return nil, fmt.Errorf("cannot match with your own ride")
+	}
+
+	riderID := userID
+	driverID := *ride.PosterUserID
+	if ride.Type == model.RideTypeNeedRide {
+		riderID = *ride.PosterUserID
+		driverID = userID
+	}
+
+	match, err := r.Resolver.Matches.Create(ctx, rideID, riderID, driverID)
 	if err != nil {
 		return nil, err
 	}
