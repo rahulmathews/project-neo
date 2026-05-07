@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.2](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.1...graphql-api-v0.0.2) (2026-05-07)
+
+
+### Bug Fixes
+
+* **graphql-api:** keep read-only lookup queries unauthenticated ([8a0ceaa](https://github.com/rahulmathews/project-neo/commit/8a0ceaa57e76374051609672d7650fae785413db))
+* **graphql-api:** update websocket init callback ([c1d17fc](https://github.com/rahulmathews/project-neo/commit/c1d17fce8f904971c985983dabeef403ad07a801))
+* harden auth flows and correct message insert signaling ([90bac3e](https://github.com/rahulmathews/project-neo/commit/90bac3e701567f046c9942c2d3b05682cf0691e7))
+* harden graphql auth checks and message insert dedupe signaling ([66c4a2e](https://github.com/rahulmathews/project-neo/commit/66c4a2efd20b54f3d87789b8cf75856d3df8d3b4))
+* **shared:** harden auth and message dedupe handling ([d2a7dfe](https://github.com/rahulmathews/project-neo/commit/d2a7dfef81607fe93213dfe566c2fb1940e1d59e))
+* tighten auth checks and dedupe insert signaling ([32dded2](https://github.com/rahulmathews/project-neo/commit/32dded286c83242830482f6417076b5e514e4e13))
+
 ## 0.0.1 (2026-04-19)
 
 
