@@ -115,15 +115,14 @@ func (r *mutationResolver) CompleteMatch(ctx context.Context, matchID uuid.UUID)
 	if err != nil {
 		return nil, err
 	}
-	currentMatch, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	match, err := r.Resolver.Matches.GetByID(ctx, matchID)
 	if err != nil {
 		return nil, err
 	}
-	if currentMatch.RiderID != userID && currentMatch.DriverID != userID {
+	if match.RiderID != userID && match.DriverID != userID {
 		return nil, fmt.Errorf("forbidden")
 	}
-
-	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCompleted)
+	match, err = r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCompleted)
 	if err != nil {
 		return nil, err
 	}
@@ -139,15 +138,14 @@ func (r *mutationResolver) CancelMatch(ctx context.Context, matchID uuid.UUID) (
 	if err != nil {
 		return nil, err
 	}
-	currentMatch, err := r.Resolver.Matches.GetByID(ctx, matchID)
+	match, err := r.Resolver.Matches.GetByID(ctx, matchID)
 	if err != nil {
 		return nil, err
 	}
-	if currentMatch.RiderID != userID && currentMatch.DriverID != userID {
+	if match.RiderID != userID && match.DriverID != userID {
 		return nil, fmt.Errorf("forbidden")
 	}
-
-	match, err := r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCancelled)
+	match, err = r.Resolver.Matches.UpdateStatus(ctx, matchID, model.MatchStatusCancelled)
 	if err != nil {
 		return nil, err
 	}
