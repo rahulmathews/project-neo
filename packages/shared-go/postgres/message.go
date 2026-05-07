@@ -34,7 +34,7 @@ func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, er
 	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return false, fmt.Errorf("insert message rows affected: %w", err)
+		return false, fmt.Errorf("message insert rows affected: %w", err)
 	}
 	return rowsAffected > 0, nil
 }
