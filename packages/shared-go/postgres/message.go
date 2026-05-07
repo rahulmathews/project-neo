@@ -23,7 +23,7 @@ func NewMessageStore(db *bun.DB) *MessageStore {
 
 // Insert writes a message row. If source_message_id is set and a row with the same
 // (group_id, source_message_id) already exists, the insert is silently skipped.
-// Returns true when a row was inserted, false when the upsert resolved to DO NOTHING.
+// Returns true if a new row was inserted, false if a conflict caused a no-op.
 func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, error) {
 	res, err := s.db.NewInsert().
 		Model(msg).
@@ -32,11 +32,11 @@ func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, er
 	if err != nil {
 		return false, fmt.Errorf("insert message: %w", err)
 	}
-	affected, err := res.RowsAffected()
+	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return false, fmt.Errorf("message insert rows affected: %w", err)
 	}
-	return affected > 0, nil
+	return rowsAffected > 0, nil
 }
 
 // ExistsByHash checks whether a message with the same group, content hash, and exact

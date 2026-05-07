@@ -8,10 +8,11 @@ package resolvers
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
 	sharedmodel "project-neo/shared/model"
+
+	"github.com/google/uuid"
 )
 
 // Health is the resolver for the health field.
