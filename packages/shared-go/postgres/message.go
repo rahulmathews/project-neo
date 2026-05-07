@@ -21,8 +21,9 @@ func NewMessageStore(db *bun.DB) *MessageStore {
 	return &MessageStore{db: db}
 }
 
-// Insert writes a message row.
-// Returns inserted=false when source_message_id conflicts with an existing row.
+// Insert writes a message row. If source_message_id is set and a row with the same
+// (group_id, source_message_id) already exists, the insert is silently skipped.
+// Returns inserted=false when a conflict prevented insertion.
 func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, error) {
 	res, err := s.db.NewInsert().
 		Model(msg).
