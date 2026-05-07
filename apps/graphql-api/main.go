@@ -2,18 +2,26 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
+	"project-neo/graphql-api/internal/httpx"
 	ipostgres "project-neo/graphql-api/internal/postgres"
 	"project-neo/shared/postgres"
+	"project-neo/shared/repository"
+
+	"github.com/uptrace/bun"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -26,24 +34,28 @@ func main() {
 		os.Exit(runHealthcheck("http://localhost:8082/health"))
 	}
 
-	if err := run(); err != nil {
-		log.Fatalf("server error: %v", err)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	if err := run(logger); err != nil {
+		logger.Error("server error", "error", err)
+		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(logger *slog.Logger) error {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatal("DATABASE_URL is required")
+		return fmt.Errorf("DATABASE_URL is required")
 	}
 	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
 	if jwtSecret == "" {
-		log.Fatal("SUPABASE_JWT_SECRET is required")
+		return fmt.Errorf("SUPABASE_JWT_SECRET is required")
 	}
+	isProd := strings.EqualFold(os.Getenv("ENV"), "production")
+	cfg := loadHTTPConfig()
 
 	db, err := postgres.NewDB(dsn)
 	if err != nil {
@@ -51,7 +63,7 @@ func run() error {
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("close database: %v", err)
+			logger.Error("close database", "error", err)
 		}
 	}()
 
@@ -60,11 +72,31 @@ func run() error {
 	rideRepo := postgres.NewRideRepository(db)
 	matchRepo := postgres.NewMatchRepository(db)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-	go ipostgres.StartListener(ctx, dsn, rideRepo, matchRepo, broker)
+	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker)
 
-	resolver := &resolvers.Resolver{
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), jwtSecret, cfg, isProd, logger)
+
+	httpSrv := &http.Server{
+		Addr:              ":" + port,
+		Handler:           rootHandler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	return serveAndWait(ctx, httpSrv, logger)
+}
+
+func buildResolver(
+	db *bun.DB,
+	broker *ipostgres.Broker,
+	rideRepo repository.RideRepository,
+	matchRepo repository.MatchRepository,
+) *resolvers.Resolver {
+	return &resolvers.Resolver{
 		Users:     postgres.NewUserRepository(db),
 		Rides:     rideRepo,
 		Matches:   matchRepo,
@@ -72,11 +104,15 @@ func run() error {
 		Locations: postgres.NewLocationRepository(db),
 		Broker:    broker,
 	}
+}
 
+func buildGraphQLServer(resolver *resolvers.Resolver, jwtSecret string, isProd bool) *handler.Server {
 	gqlSrv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
-	gqlSrv.Use(extension.Introspection{})
+	if !isProd {
+		gqlSrv.Use(extension.Introspection{})
+	}
 	gqlSrv.AddTransport(transport.Options{})
 	gqlSrv.AddTransport(transport.GET{})
 	gqlSrv.AddTransport(transport.POST{})
@@ -85,25 +121,71 @@ func run() error {
 		KeepAlivePingInterval: 10 * time.Second,
 		InitFunc:              websocketInitFunc(jwtSecret),
 	})
+	return gqlSrv
+}
 
+func buildRootHandler(
+	resolver *resolvers.Resolver,
+	jwtSecret string,
+	cfg httpConfig,
+	isProd bool,
+	logger *slog.Logger,
+) http.Handler {
+	gqlSrv := buildGraphQLServer(resolver, jwtSecret, isProd)
 	mux := http.NewServeMux()
-	mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
-	mux.Handle("/query", auth.Middleware(jwtSecret)(gqlSrv))
+	if isProd {
+		mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "not found", http.StatusNotFound)
+		})
+	} else {
+		mux.Handle("/", playground.Handler("GraphQL Playground", "/query"))
+	}
+	mux.Handle("/query", httpx.Chain(
+		gqlSrv,
+		auth.Middleware(jwtSecret),
+		httpx.RateLimit(cfg.rateLimitRPS, cfg.rateLimitBurst),
+		httpx.BodyLimit(cfg.maxBodyBytes),
+	))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
 	})
+	return httpx.Chain(
+		mux,
+		httpx.Recover(logger),
+		httpx.RequestLog(logger, "/health"),
+		httpx.CORS(cfg.allowedOrigins),
+	)
+}
 
-	httpSrv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+func serveAndWait(ctx context.Context, srv *http.Server, logger *slog.Logger) error {
+	serverErr := make(chan error, 1)
+	go func() {
+		logger.Info("graphql-api listening", "addr", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+			return
+		}
+		serverErr <- nil
+	}()
+
+	select {
+	case err := <-serverErr:
+		return err
+	case <-ctx.Done():
+		logger.Info("shutdown signal received, draining")
 	}
 
-	log.Printf("graphql-api listening on :%s", port)
-	return httpSrv.ListenAndServe()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("http server shutdown", "error", err)
+	}
+	if err := <-serverErr; err != nil {
+		return err
+	}
+	logger.Info("graphql-api stopped cleanly")
+	return nil
 }
 
 func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
@@ -130,21 +212,65 @@ func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
 	}
 }
 
+type httpConfig struct {
+	allowedOrigins []string
+	maxBodyBytes   int64
+	rateLimitRPS   int
+	rateLimitBurst int
+}
+
+func loadHTTPConfig() httpConfig {
+	cfg := httpConfig{
+		allowedOrigins: []string{"*"},
+		maxBodyBytes:   1 << 20, // 1 MiB
+		rateLimitRPS:   50,
+		rateLimitBurst: 100,
+	}
+	if v := os.Getenv("CORS_ALLOWED_ORIGINS"); v != "" {
+		parts := strings.Split(v, ",")
+		out := parts[:0]
+		for _, p := range parts {
+			if p = strings.TrimSpace(p); p != "" {
+				out = append(out, p)
+			}
+		}
+		if len(out) > 0 {
+			cfg.allowedOrigins = out
+		}
+	}
+	if v := os.Getenv("MAX_BODY_BYTES"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			cfg.maxBodyBytes = n
+		}
+	}
+	if v := os.Getenv("RATE_LIMIT_RPS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			cfg.rateLimitRPS = n
+		}
+	}
+	if v := os.Getenv("RATE_LIMIT_BURST"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			cfg.rateLimitBurst = n
+		}
+	}
+	return cfg
+}
+
 func runHealthcheck(url string) int {
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		log.Printf("healthcheck failed: %v", err)
+		fmt.Fprintf(os.Stderr, "healthcheck failed: %v\n", err)
 		return 1
 	}
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("healthcheck close body error: %v", closeErr)
+			fmt.Fprintf(os.Stderr, "healthcheck close body error: %v\n", closeErr)
 		}
 	}()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		log.Printf("healthcheck failed: unexpected status %d", resp.StatusCode)
+		fmt.Fprintf(os.Stderr, "healthcheck failed: unexpected status %d\n", resp.StatusCode)
 		return 1
 	}
 

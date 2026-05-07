@@ -11,6 +11,7 @@ import (
 
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/internal/auth"
+	"project-neo/graphql-api/internal/validation"
 	"project-neo/shared/model"
 
 	"github.com/google/uuid"
@@ -22,6 +23,9 @@ func (r *mutationResolver) UpsertUser(ctx context.Context, input model.UpsertUse
 	if err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateUpsertUserInput(input); err != nil {
+		return nil, err
+	}
 	return r.Resolver.Users.Upsert(ctx, userID, input)
 }
 
@@ -31,6 +35,9 @@ func (r *mutationResolver) CreateRide(ctx context.Context, input model.CreateRid
 	if err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateCreateRideInput(input); err != nil {
+		return nil, err
+	}
 	return r.Resolver.Rides.Create(ctx, userID, input)
 }
 
@@ -38,6 +45,9 @@ func (r *mutationResolver) CreateRide(ctx context.Context, input model.CreateRid
 func (r *mutationResolver) UpdateRide(ctx context.Context, id uuid.UUID, input model.UpdateRideInput) (*model.Ride, error) {
 	userID, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateUpdateRideInput(input); err != nil {
 		return nil, err
 	}
 	return r.Resolver.Rides.Update(ctx, id, userID, input)
@@ -149,6 +159,9 @@ func (r *mutationResolver) CreateGroup(ctx context.Context, input model.CreateGr
 	if err != nil {
 		return nil, err
 	}
+	if err := validation.ValidateCreateGroupInput(input); err != nil {
+		return nil, err
+	}
 	return r.Resolver.Groups.Create(ctx, input)
 }
 
@@ -156,6 +169,9 @@ func (r *mutationResolver) CreateGroup(ctx context.Context, input model.CreateGr
 func (r *mutationResolver) UpsertLocationContext(ctx context.Context, input model.UpsertLocationContextInput) (*model.LocationContext, error) {
 	_, err := auth.UserIDFromCtx(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateUpsertLocationContextInput(input); err != nil {
 		return nil, err
 	}
 	return r.Resolver.Groups.UpsertLocationContext(ctx, input)
