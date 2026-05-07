@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.4](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.3...workers-v0.0.4) (2026-05-07)
+
+
+### Bug Fixes
+
+* **graphql-api:** update websocket init callback ([c1d17fc](https://github.com/rahulmathews/project-neo/commit/c1d17fce8f904971c985983dabeef403ad07a801))
+* harden auth flows and correct message insert signaling ([90bac3e](https://github.com/rahulmathews/project-neo/commit/90bac3e701567f046c9942c2d3b05682cf0691e7))
+* harden graphql auth checks and message insert dedupe signaling ([66c4a2e](https://github.com/rahulmathews/project-neo/commit/66c4a2efd20b54f3d87789b8cf75856d3df8d3b4))
+* **shared:** harden auth and message dedupe handling ([d2a7dfe](https://github.com/rahulmathews/project-neo/commit/d2a7dfef81607fe93213dfe566c2fb1940e1d59e))
+* tighten auth checks and dedupe insert signaling ([32dded2](https://github.com/rahulmathews/project-neo/commit/32dded286c83242830482f6417076b5e514e4e13))
+* **workers:** avoid shadowing message writer errors ([81efb9c](https://github.com/rahulmathews/project-neo/commit/81efb9c83fca1872b1a2b3fceeb8372fb35a2e04))
+* **workers:** avoid shadowing message writer errors ([f9ae181](https://github.com/rahulmathews/project-neo/commit/f9ae181c94b811194e181f4c7eba2f4f7ba6873e))
+* **workers:** avoid shadowing message writer errors ([ae954d7](https://github.com/rahulmathews/project-neo/commit/ae954d7823837a9293c2f89ff73e7d8e4fa43e1d))
+
 ## [0.0.3](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.2...workers-v0.0.3) (2026-04-24)
 
 
