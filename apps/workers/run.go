@@ -7,13 +7,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
+	"project-neo/workers/internal/metrics"
 	"project-neo/workers/parser"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/uptrace/bun"
 )
 
@@ -47,11 +50,13 @@ func run() error {
 	if port == "" {
 		port = "8083"
 	}
-	srv := startHealthServer(port, logger)
+	reg := metrics.NewRegistry()
+	httpMetrics, parserMetrics := metrics.New(reg)
+	srv := startHealthServer(port, logger, reg, httpMetrics)
 
 	provider := parser.NewLLMProvider(logger)
-	go parser.StartRecovery(ctx, bunDB, provider, logger)
-	go parser.StartListener(ctx, databaseURL, bunDB, provider, logger)
+	go parser.StartRecovery(ctx, bunDB, provider, parserMetrics, logger)
+	go parser.StartListener(ctx, databaseURL, bunDB, provider, parserMetrics, logger)
 
 	waitForShutdown(cancel, connectors, srv, logger)
 	return nil
@@ -78,18 +83,20 @@ func buildConnectors(ctx context.Context, bunDB *bun.DB, logger *slog.Logger) ([
 	return connectors, nil
 }
 
-func startHealthServer(port string, logger *slog.Logger) *http.Server {
+func startHealthServer(port string, logger *slog.Logger, reg *prometheus.Registry, httpMetrics *metrics.HTTP) *http.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+	mux.Handle("/health", instrumentHTTP(httpMetrics, "/health", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"workers"}`)
-	})
+	})))
+	mux.Handle("/metrics", metrics.Handler(reg))
 	srv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	go func() {
 		logger.Info("workers health server listening", "port", port)
@@ -98,6 +105,30 @@ func startHealthServer(port string, logger *slog.Logger) *http.Server {
 		}
 	}()
 	return srv
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *statusRecorder) WriteHeader(code int) {
+	s.status = code
+	s.ResponseWriter.WriteHeader(code)
+}
+
+func instrumentHTTP(m *metrics.HTTP, route string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w}
+		next.ServeHTTP(rec, r)
+		status := rec.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		m.RequestsTotal.WithLabelValues(r.Method, route, strconv.Itoa(status)).Inc()
+		m.RequestDuration.WithLabelValues(r.Method, route).Observe(time.Since(start).Seconds())
+	})
 }
 
 func waitForShutdown(

@@ -7,6 +7,7 @@ import (
 
 	"project-neo/shared/model"
 	sharedpostgres "project-neo/shared/postgres"
+	"project-neo/workers/internal/metrics"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -15,7 +16,7 @@ import (
 
 // StartListener opens a persistent LISTEN connection on 'messages_inserted' and
 // dispatches each notification to the extractor pipeline. Blocks until ctx is cancelled.
-func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provider LLMProvider, logger *slog.Logger) {
+func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
 	msgStore := sharedpostgres.NewMessageStore(bunDB)
 
 	listener := pq.NewListener(databaseURL, 10*time.Second, time.Minute,
@@ -51,12 +52,12 @@ func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provi
 				logger.Warn("parser listener: invalid uuid payload", "payload", n.Extra)
 				continue
 			}
-			go handleNotification(ctx, id, msgStore, bunDB, provider, logger)
+			go handleNotification(ctx, id, msgStore, bunDB, provider, m, logger)
 		}
 	}
 }
 
-func handleNotification(ctx context.Context, id uuid.UUID, msgStore *sharedpostgres.MessageStore, db *bun.DB, provider LLMProvider, logger *slog.Logger) {
+func handleNotification(ctx context.Context, id uuid.UUID, msgStore *sharedpostgres.MessageStore, db *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
 	msg, err := msgStore.GetByID(ctx, id)
 	if err != nil {
 		logger.Error("parser listener: fetch message", "id", id, "error", err)
@@ -68,5 +69,5 @@ func handleNotification(ctx context.Context, id uuid.UUID, msgStore *sharedpostg
 	if msg.ParseStatus != model.ParseStatusPending {
 		return // already handled (defensive check)
 	}
-	Process(ctx, msg, db, provider, logger)
+	Process(ctx, msg, db, provider, m, logger)
 }

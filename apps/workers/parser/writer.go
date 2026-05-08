@@ -8,6 +8,7 @@ import (
 
 	"project-neo/shared/model"
 	sharedpostgres "project-neo/shared/postgres"
+	"project-neo/workers/internal/metrics"
 
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -23,6 +24,7 @@ func writeRide(
 	parsed *ParsedRide,
 	fromLocationID *uuid.UUID,
 	toLocationID *uuid.UUID,
+	m *metrics.Parser,
 	logger *slog.Logger,
 ) error {
 	var exists bool
@@ -32,7 +34,7 @@ func writeRide(
 		logger.Warn("writer: duplicate check failed, proceeding", "msg_id", msg.ID, "error", err)
 	} else if exists {
 		logger.Info("writer: skipping duplicate ride (same content hash in group)", "msg_id", msg.ID)
-		markSuccess(ctx, db, msg.ID, logger)
+		markSuccess(ctx, db, msg.ID, m, logger)
 		return nil
 	}
 
@@ -60,7 +62,7 @@ func writeRide(
 		return fmt.Errorf("ride insert: %w", err)
 	}
 
-	markSuccess(ctx, db, msg.ID, logger)
+	markSuccess(ctx, db, msg.ID, m, logger)
 	logger.Info("parser: ride created", "ride_id", ride.ID, "msg_id", msg.ID, "type", ride.Type)
 	return nil
 }
@@ -76,7 +78,7 @@ func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reaso
 	}
 }
 
-func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, logger *slog.Logger) {
+func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, m *metrics.Parser, logger *slog.Logger) {
 	now := time.Now()
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
@@ -85,10 +87,12 @@ func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, logger *slog.
 		Where("id = ?", msgID).
 		Exec(ctx); err != nil {
 		logger.Error("writer: mark success", "msg_id", msgID, "error", err)
+		return
 	}
+	m.Messages.WithLabelValues("success").Inc()
 }
 
-func markFailed(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) {
+func markFailed(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, m *metrics.Parser, logger *slog.Logger) {
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("parse_status = ?", model.ParseStatusFailed).
@@ -96,10 +100,12 @@ func markFailed(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string,
 		Where("id = ?", msgID).
 		Exec(ctx); err != nil {
 		logger.Error("writer: mark failed", "msg_id", msgID, "error", err)
+		return
 	}
+	m.Messages.WithLabelValues("failed").Inc()
 }
 
-func markSkipped(ctx context.Context, db *bun.DB, msgID uuid.UUID, logger *slog.Logger) {
+func markSkipped(ctx context.Context, db *bun.DB, msgID uuid.UUID, m *metrics.Parser, logger *slog.Logger) {
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("parse_status = ?", model.ParseStatusSkipped).
@@ -107,7 +113,9 @@ func markSkipped(ctx context.Context, db *bun.DB, msgID uuid.UUID, logger *slog.
 		Where("id = ?", msgID).
 		Exec(ctx); err != nil {
 		logger.Error("writer: mark skipped", "msg_id", msgID, "error", err)
+		return
 	}
+	m.Messages.WithLabelValues("skipped").Inc()
 }
 
 func currencyOrDefault(c *string) string {

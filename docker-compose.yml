@@ -12,7 +12,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434/v1}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:3b}
-      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
       - WHATSAPP_SESSION_PATH=/data/whatsapp.db
     volumes:
       - whatsapp-session:/data
