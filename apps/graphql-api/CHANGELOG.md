@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.2...graphql-api-v0.0.3) (2026-05-08)
+
+
+### Features
+
+* **graphql-api:** production hardening ([ac1727c](https://github.com/rahulmathews/project-neo/commit/ac1727c4268b8b00b4e089dd5473524e9cc3a34e))
+* **graphql-api:** production hardening ([edd0f8b](https://github.com/rahulmathews/project-neo/commit/edd0f8b0bc080c55f0281c6cd46251abebf57f36))
+
 ## [0.0.2](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.1...graphql-api-v0.0.2) (2026-05-07)
 
 

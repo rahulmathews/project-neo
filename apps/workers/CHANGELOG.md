@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.5](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.4...workers-v0.0.5) (2026-05-08)
+
+
+### Features
+
+* **graphql-api:** production hardening ([ac1727c](https://github.com/rahulmathews/project-neo/commit/ac1727c4268b8b00b4e089dd5473524e9cc3a34e))
+* **graphql-api:** production hardening ([edd0f8b](https://github.com/rahulmathews/project-neo/commit/edd0f8b0bc080c55f0281c6cd46251abebf57f36))
+
 ## [0.0.4](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.3...workers-v0.0.4) (2026-05-07)
 
 
