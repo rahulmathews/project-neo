@@ -1,6 +1,6 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: April 21, 2026 (session 7)
+**Last Updated**: May 5, 2026 (session 8)
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -94,6 +94,17 @@
 - [x] Implement subscription resolvers
 - [x] Wire auth middleware
 - [x] Health endpoint verified
+- [x] Auth hardening: read-only lookups remain unauthenticated; mutations enforce identity (PRs #46-#49)
+- [x] Websocket init callback hardening (PR #49)
+- [x] Distroless-compatible healthchecks (`/graphql-api healthcheck`)
+
+### 📋 GraphQL API — Production Hardening (Pending)
+- [ ] Migrate from stdlib `log` to `slog` for parity with workers
+- [ ] Graceful shutdown (SIGINT/SIGTERM, drain HTTP, propagate ctx to pg listener)
+- [ ] Gate GraphQL introspection by environment (disabled in production)
+- [ ] HTTP middleware chain: panic recovery, request log, body size cap, CORS, rate limiting
+- [ ] Input validation on mutation inputs (bounds checks, email/phone regex)
+- [ ] Query complexity limits via `extension.ComplexityLimit`
 
 ### ✅ Completed — Workers Service (`apps/workers`)
 - [x] Initialize Go module
@@ -107,7 +118,7 @@
 ### ✅ Completed — Workers Message Parser (`apps/workers/parser`)
 - [x] `ParsedRide` struct and `ErrNotARide` sentinel (`types.go`)
 - [x] Regex-based ride message extractor (`regex.go`)
-- [x] Claude Haiku fallback extractor (`haiku.go`)
+- [x] LLM fallback extractor via Ollama (`ollama.go`) — uses local Qwen model; provider abstraction in `provider.go`
 - [x] Location context resolver — alias → coordinates (`location.go`)
 - [x] Parser writer — ride insert + message status update (`writer.go`)
 - [x] Extractor pipeline: regex → Haiku → location → write (`extractor.go`)
@@ -123,8 +134,8 @@
 ### ✅ Completed — Workers Error Handling & Retry
 - [x] Retry-with-backoff for transient parser failures (3 attempts, 5s → 15s → 45s)
 - [x] Startup recovery sweep for stale PENDING messages (`retry_count > 0`)
-- [x] `retry_count` column added to `messages` table (migration written)
-- [x] DEBUG logging of Haiku-parsed messages for regex corpus building
+- [x] `retry_count` column added to `messages` table (migration `20260419000000_messages_retry_count.sql`)
+- [x] DEBUG logging of LLM-parsed messages for regex corpus building
 
 ### 📋 Workers Service — Pending
 - [ ] Set up additional message source connectors
@@ -158,11 +169,12 @@
 ## Phase 4: Monitoring & Observability
 
 ### 📋 Pending
-- [ ] Add structured logging to Go services
+- [ ] Standardize on `slog` across all Go services (workers ✅, graphql-api pending)
 - [ ] Set up error tracking (Sentry or self-hosted alternative)
-- [ ] Add metrics collection (Prometheus/Grafana - optional)
-- [ ] Database query performance monitoring
-- [ ] API response time tracking
+- [ ] Add `/metrics` Prometheus endpoint to graphql-api and workers
+- [ ] Wire OpenTelemetry tracing across workers → pg_notify → graphql-api
+- [ ] Database query performance monitoring (pg_stat_statements + slow query log)
+- [ ] API response time tracking (histogram metrics by resolver)
 
 ---
 
@@ -227,8 +239,17 @@
 
 ## Current Status Summary
 
-**Next Immediate Tasks**:
+**Next Immediate Tasks** (P0 — Production hardening, Sprint 1):
 1. ✅ Parser error handling and retries — merged
 2. ✅ Flutter mobile scaffold — design spec + implementation plan written
 3. ✅ Implement Flutter mobile scaffold per `docs/superpowers/plans/2026-04-21-flutter-mobile-scaffold.md`
-4. Implement ride listing screen (fetch rides from GraphQL API)
+4. 🔄 graphql-api production hardening (slog, graceful shutdown, middleware, validation)
+5. Implement ride listing screen (fetch rides from GraphQL API)
+
+**Recent Hardening (PRs #46-#51, late April 2026)**:
+- Tightened auth checks across read-only and mutating operations
+- Hardened message-insert dedupe signaling
+- Fixed websocket init callback path for subscription auth
+- Avoided shadowing message writer errors in workers
+- Distroless-compatible healthcheck binaries
+- Pinned Go tool versions in CI; fixed golangci-lint install
