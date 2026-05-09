@@ -17,6 +17,7 @@ import (
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
 	"project-neo/graphql-api/internal/httpx"
+	"project-neo/graphql-api/internal/metrics"
 	ipostgres "project-neo/graphql-api/internal/postgres"
 	"project-neo/shared/postgres"
 	"project-neo/shared/repository"
@@ -27,6 +28,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
@@ -76,7 +78,9 @@ func run(logger *slog.Logger) error {
 	defer cancel()
 	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker)
 
-	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), jwtSecret, cfg, isProd, logger)
+	reg := metrics.NewRegistry()
+	httpMetrics := metrics.New(reg)
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), jwtSecret, cfg, isProd, logger, httpMetrics, reg)
 
 	httpSrv := &http.Server{
 		Addr:              ":" + port,
@@ -130,6 +134,8 @@ func buildRootHandler(
 	cfg httpConfig,
 	isProd bool,
 	logger *slog.Logger,
+	httpMetrics *metrics.HTTP,
+	reg *prometheus.Registry,
 ) http.Handler {
 	gqlSrv := buildGraphQLServer(resolver, jwtSecret, isProd)
 	mux := http.NewServeMux()
@@ -142,6 +148,7 @@ func buildRootHandler(
 	}
 	mux.Handle("/query", httpx.Chain(
 		gqlSrv,
+		httpx.Metrics(httpMetrics, "/query"),
 		auth.Middleware(jwtSecret),
 		httpx.RateLimit(cfg.rateLimitRPS, cfg.rateLimitBurst),
 		httpx.BodyLimit(cfg.maxBodyBytes),
@@ -150,10 +157,11 @@ func buildRootHandler(
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
 	})
+	mux.Handle("/metrics", metrics.Handler(reg))
 	return httpx.Chain(
 		mux,
 		httpx.Recover(logger),
-		httpx.RequestLog(logger, "/health"),
+		httpx.RequestLog(logger, "/health", "/metrics"),
 		httpx.CORS(cfg.allowedOrigins),
 	)
 }

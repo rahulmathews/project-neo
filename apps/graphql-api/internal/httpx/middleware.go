@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"project-neo/graphql-api/internal/metrics"
+
 	"github.com/rs/cors"
 	"golang.org/x/time/rate"
 )
@@ -182,6 +184,26 @@ func clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
+}
+
+// Metrics records HTTP request count, duration, and in-flight gauge for a known route label.
+// Pass the route label (e.g. "/query") rather than r.URL.Path to keep cardinality bounded.
+func Metrics(m *metrics.HTTP, route string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			m.InFlight.Inc()
+			defer m.InFlight.Dec()
+			start := time.Now()
+			rec := &statusRecorder{ResponseWriter: w}
+			next.ServeHTTP(rec, r)
+			status := rec.status
+			if status == 0 {
+				status = http.StatusOK
+			}
+			m.RequestsTotal.WithLabelValues(r.Method, route, strconv.Itoa(status)).Inc()
+			m.RequestDuration.WithLabelValues(r.Method, route).Observe(time.Since(start).Seconds())
+		})
+	}
 }
 
 // Chain composes middlewares in order: Chain(a, b, c)(h) == a(b(c(h))).

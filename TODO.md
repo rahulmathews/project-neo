@@ -168,13 +168,20 @@
 
 ## Phase 4: Monitoring & Observability
 
+### ✅ Completed
+- [x] Standardized on `slog` across both Go services (workers + graphql-api)
+- [x] `/metrics` Prometheus endpoint on graphql-api (port 8082) — Go runtime + process + HTTP request metrics
+- [x] `/metrics` Prometheus endpoint on workers (port 8083) — Go runtime + process + HTTP + parser pipeline
+  - parser counters: messages_total{outcome}, extractor_total{provider,outcome}, retries_total
+  - parser histograms: extract_duration_seconds{provider}
+- [x] API response time tracking — `graphql_api_http_request_duration_seconds` histogram
+
 ### 📋 Pending
-- [ ] Standardize on `slog` across all Go services (workers ✅, graphql-api pending)
 - [ ] Set up error tracking (Sentry or self-hosted alternative)
-- [ ] Add `/metrics` Prometheus endpoint to graphql-api and workers
 - [ ] Wire OpenTelemetry tracing across workers → pg_notify → graphql-api
+  - Needs trace context propagation through pg_notify payload (likely via `messages.trace_id` column)
 - [ ] Database query performance monitoring (pg_stat_statements + slow query log)
-- [ ] API response time tracking (histogram metrics by resolver)
+- [ ] Per-resolver GraphQL operation metrics (gqlgen middleware extension)
 
 ---
 
