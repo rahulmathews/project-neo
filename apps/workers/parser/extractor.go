@@ -35,6 +35,8 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, provider LLMPr
 			m.Retries.Inc()
 			continue
 		}
+		parsed.FromLocationText = cleanOptionalLocationText(parsed.FromLocationText)
+		parsed.ToLocationText = cleanOptionalLocationText(parsed.ToLocationText)
 
 		// Step 2: resolve locations (best-effort — never blocks progress)
 		fromID := resolveLocation(ctx, db, parsed.FromLocationText, msg.GroupID, logger)
@@ -73,13 +75,19 @@ func extract(
 	logger *slog.Logger,
 ) (*ParsedRide, bool) {
 	regexStart := time.Now()
-	parsed, hit := extractWithRegex(msg.Content)
+	parsed, hit := extractWithRegex(msg.Content, msg.Timestamp)
 	m.ExtractDuration.WithLabelValues("regex").Observe(time.Since(regexStart).Seconds())
 	if hit {
 		m.Extractor.WithLabelValues("regex", "matched").Inc()
 		return parsed, false
 	}
 	m.Extractor.WithLabelValues("regex", "miss").Inc()
+	if isClearlyNonRide(msg.Content) {
+		m.Extractor.WithLabelValues("regex", "not_a_ride").Inc()
+		logger.Info("parser: skipped (blocked non-ride topic)", "msg_id", msg.ID)
+		markSkipped(ctx, db, msg.ID, m, logger)
+		return nil, true
+	}
 
 	llmStart := time.Now()
 	var err error

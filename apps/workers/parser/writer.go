@@ -27,44 +27,70 @@ func writeRide(
 	m *metrics.Parser,
 	logger *slog.Logger,
 ) error {
-	var exists bool
-	if err := db.NewSelect().
-		ColumnExpr("EXISTS (SELECT 1 FROM rides r2 JOIN messages m ON m.id = r2.message_id WHERE m.group_id = ? AND m.content_hash = ?)", msg.GroupID, msg.ContentHash).
-		Scan(ctx, &exists); err != nil {
-		logger.Warn("writer: duplicate check failed, proceeding", "msg_id", msg.ID, "error", err)
-	} else if exists {
-		logger.Info("writer: skipping duplicate ride (same content hash in group)", "msg_id", msg.ID)
-		markSuccess(ctx, db, msg.ID, m, logger)
-		return nil
-	}
+	fingerprint := rideSemanticFingerprint(msg, parsed)
 
 	ride := &model.Ride{
-		ID:               uuid.New(),
-		MessageID:        &msg.ID,
-		GroupID:          msg.GroupID,
-		Type:             parsed.RideType,
-		FromLocationID:   fromLocationID,
-		ToLocationID:     toLocationID,
-		FromLocationText: parsed.FromLocationText,
-		ToLocationText:   parsed.ToLocationText,
-		DepartureTime:    parsed.DepartureTime,
-		IsImmediate:      parsed.IsImmediate,
-		Cost:             parsed.Cost,
-		Currency:         currencyOrDefault(parsed.Currency),
-		Distance:         parsed.Distance,
-		SeatsAvailable:   parsed.SeatsAvailable,
-		Status:           model.RideStatusAvailable,
+		ID:                  uuid.New(),
+		MessageID:           &msg.ID,
+		GroupID:             msg.GroupID,
+		Type:                parsed.RideType,
+		FromLocationID:      fromLocationID,
+		ToLocationID:        toLocationID,
+		FromLocationText:    parsed.FromLocationText,
+		ToLocationText:      parsed.ToLocationText,
+		DepartureTime:       parsed.DepartureTime,
+		IsImmediate:         parsed.IsImmediate,
+		Cost:                parsed.Cost,
+		Currency:            currencyOrDefault(parsed.Currency),
+		Distance:            parsed.Distance,
+		SeatsAvailable:      parsed.SeatsAvailable,
+		Status:              model.RideStatusAvailable,
+		SemanticFingerprint: &fingerprint,
+		FingerprintVersion:  rideFingerprintVersion,
 	}
 
 	rideStore := sharedpostgres.NewRideStore(db)
-	if err := rideStore.InsertRide(ctx, ride); err != nil {
-		logger.Error("writer: insert ride", "msg_id", msg.ID, "error", err)
+	canonicalRide, inserted, err := findLegacyCanonicalRide(ctx, rideStore, msg, parsed, fingerprint)
+	if err != nil {
+		logger.Error("writer: find legacy canonical ride", "msg_id", msg.ID, "error", err)
 		return fmt.Errorf("ride insert: %w", err)
 	}
+	if canonicalRide == nil {
+		canonicalRide, inserted, err = rideStore.UpsertCanonicalRide(ctx, ride)
+		if err != nil {
+			logger.Error("writer: insert ride", "msg_id", msg.ID, "error", err)
+			return fmt.Errorf("ride insert: %w", err)
+		}
+	}
 
+	occurrence := &model.RideOccurrence{
+		RideID:           canonicalRide.ID,
+		MessageID:        msg.ID,
+		GroupID:          msg.GroupID,
+		GroupSourceID:    msg.GroupSourceID,
+		SenderIdentifier: msg.SenderIdentifier,
+		ContentHash:      &msg.ContentHash,
+		MessageTimestamp: msg.Timestamp,
+	}
+	if _, err := rideStore.InsertRideOccurrence(ctx, occurrence); err != nil {
+		logger.Error("writer: insert ride occurrence", "msg_id", msg.ID, "ride_id", canonicalRide.ID, "error", err)
+		return fmt.Errorf("ride occurrence insert: %w", err)
+	}
 	markSuccess(ctx, db, msg.ID, m, logger)
-	logger.Info("parser: ride created", "ride_id", ride.ID, "msg_id", msg.ID, "type", ride.Type)
+	logger.Info("parser: ride occurrence recorded", "ride_id", canonicalRide.ID, "msg_id", msg.ID, "type", canonicalRide.Type, "canonical_inserted", inserted)
 	return nil
+}
+
+func findLegacyCanonicalRide(ctx context.Context, rideStore *sharedpostgres.RideStore, msg *model.Message, parsed *ParsedRide, primaryFingerprint string) (*model.Ride, bool, error) {
+	legacyFingerprint := legacyRideSemanticFingerprint(msg, parsed)
+	if legacyFingerprint == "" || legacyFingerprint == primaryFingerprint {
+		return nil, false, nil
+	}
+	ride, err := rideStore.GetBySemanticFingerprint(ctx, legacyFingerprint)
+	if err != nil || ride == nil {
+		return ride, false, err
+	}
+	return ride, false, nil
 }
 
 func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) {

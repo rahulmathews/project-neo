@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"time"
 
@@ -28,7 +29,7 @@ func StartListener(
 		}
 	})
 
-	for _, channel := range []string{"rides_added", "rides_updated", "matches_updated"} {
+	for _, channel := range []string{"rides_added", "ride_occurrences_added", "rides_updated", "matches_updated"} {
 		if err := listener.Listen(channel); err != nil {
 			logger.Error("listen channel", "channel", channel, "error", err)
 		}
@@ -50,6 +51,8 @@ func StartListener(
 			switch n.Channel {
 			case "rides_added":
 				handleRideAdded(ctx, logger, n.Extra, rides, broker)
+			case "ride_occurrences_added":
+				handleRideOccurrenceAdded(ctx, logger, n.Extra, rides, broker)
 			case "rides_updated":
 				handleRideUpdated(ctx, logger, n.Extra, rides, broker)
 			case "matches_updated":
@@ -57,6 +60,33 @@ func StartListener(
 			}
 		}
 	}
+}
+
+type rideOccurrencePayload struct {
+	RideID  string `json:"ride_id"`
+	GroupID string `json:"group_id"`
+}
+
+func handleRideOccurrenceAdded(ctx context.Context, logger *slog.Logger, payload string, repo repository.RideRepository, broker *Broker) {
+	var p rideOccurrencePayload
+	if err := json.Unmarshal([]byte(payload), &p); err != nil {
+		logger.Warn("listener: invalid ride occurrence payload", "payload", payload, "error", err)
+		return
+	}
+	id, err := uuid.Parse(p.RideID)
+	if err != nil {
+		return
+	}
+	ride, err := repo.GetByID(ctx, id)
+	if err != nil {
+		logger.Error("listener: fetch occurrence ride", "id", p.RideID, "error", err)
+		return
+	}
+	groupID, err := uuid.Parse(p.GroupID)
+	if err == nil {
+		ride.GroupID = groupID
+	}
+	broker.PublishRideAdded(RideEvent{Ride: ride, GroupID: p.GroupID})
 }
 
 func handleRideAdded(ctx context.Context, logger *slog.Logger, idStr string, repo repository.RideRepository, broker *Broker) {
