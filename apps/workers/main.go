@@ -10,7 +10,11 @@ import (
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
-		os.Exit(runHealthcheck("http://localhost:8083/health"))
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8083"
+		}
+		os.Exit(runHealthcheck("http://localhost:" + port + "/health"))
 	}
 
 	if err := run(); err != nil {

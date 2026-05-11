@@ -22,6 +22,8 @@ type ollamaResponse struct {
 	DepartureTimeText *string  `json:"departure_time_text"`
 	Cost              *float64 `json:"cost"`
 	Currency          *string  `json:"currency"`
+	Distance          *float64 `json:"distance"`
+	SeatsAvailable    *int     `json:"seats_available"`
 	NotARideMessage   bool     `json:"not_a_ride_message"`
 }
 
@@ -57,6 +59,8 @@ Return ONLY a JSON object with no markdown formatting:
   "departure_time_text": "string" | null,
   "cost": number | null,
   "currency": "string" | null,
+  "distance": number | null,
+  "seats_available": number | null,
   "not_a_ride_message": true | false
 }
 
@@ -106,6 +110,8 @@ func (p *OllamaProvider) Extract(ctx context.Context, content, groupName string)
 		IsImmediate:      or.IsImmediate,
 		Cost:             or.Cost,
 		Currency:         or.Currency,
+		Distance:         or.Distance,
+		SeatsAvailable:   or.SeatsAvailable,
 		FromLocationText: or.FromLocation,
 		ToLocationText:   or.ToLocation,
 	}

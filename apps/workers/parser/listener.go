@@ -2,6 +2,7 @@ package parser
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -15,8 +16,9 @@ import (
 )
 
 // StartListener opens a persistent LISTEN connection on 'messages_inserted' and
-// dispatches each notification to the extractor pipeline. Blocks until ctx is cancelled.
-func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
+// dispatches each notification to the extractor pipeline. Blocks until ctx is
+// cancelled. onReady is called after LISTEN succeeds.
+func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger, onReady func()) error {
 	msgStore := sharedpostgres.NewMessageStore(bunDB)
 
 	listener := pq.NewListener(databaseURL, 10*time.Second, time.Minute,
@@ -34,14 +36,17 @@ func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provi
 
 	if err := listener.Listen("messages_inserted"); err != nil {
 		logger.Error("parser listener: listen failed", "error", err)
-		return
+		return fmt.Errorf("listen messages_inserted: %w", err)
+	}
+	if onReady != nil {
+		onReady()
 	}
 	logger.Info("message parser listener started")
 
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case n := <-listener.Notify:
 			if n == nil {
 				// nil means the connection was re-established after a drop — safe to continue

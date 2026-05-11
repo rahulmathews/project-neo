@@ -37,7 +37,17 @@ func (w *MessageWriter) Write(
 	content string,
 	timestamp time.Time,
 ) (stored bool, err error) {
-	hash := model.ComputeContentHash(content)
+	normalizedContent := model.NormalizeMessageContent(content)
+	if normalizedContent == "" {
+		return false, nil
+	}
+
+	if timestamp.IsZero() {
+		timestamp = time.Now()
+	}
+	timestamp = timestamp.UTC()
+
+	hash := model.ComputeContentHash(normalizedContent)
 
 	// For messages with no WhatsApp message ID, check exact hash+timestamp match.
 	if sourceMessageID == nil {
@@ -51,12 +61,18 @@ func (w *MessageWriter) Write(
 		}
 	}
 
+	var groupSourceID *uuid.UUID
+	if sourceID != uuid.Nil {
+		groupSourceID = &sourceID
+	}
+
 	msg := &model.Message{
 		ID:               uuid.New(),
 		GroupID:          groupID,
+		GroupSourceID:    groupSourceID,
 		SourceMessageID:  sourceMessageID,
 		SenderIdentifier: senderIdentifier,
-		Content:          content,
+		Content:          normalizedContent,
 		ContentHash:      hash,
 		Timestamp:        timestamp,
 		ParseStatus:      model.ParseStatusPending,

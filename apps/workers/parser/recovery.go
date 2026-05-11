@@ -21,8 +21,8 @@ const (
 	recoveryMaxConcurrent = 5
 )
 
-// StartRecovery queries for stale PENDING messages (retry_count > 0, older than
-// recoveryStaleness) and re-processes each one in a goroutine. Runs once at startup.
+// StartRecovery queries for stale PENDING messages older than recoveryStaleness
+// and re-processes each one in a goroutine. Runs once at startup.
 func StartRecovery(ctx context.Context, db *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
 	var msgs []*model.Message
 	cutoff := time.Now().Add(-recoveryStaleness)
@@ -30,7 +30,6 @@ func StartRecovery(ctx context.Context, db *bun.DB, provider LLMProvider, m *met
 	if err := db.NewSelect().
 		Model(&msgs).
 		Where("parse_status = ?", model.ParseStatusPending).
-		Where("retry_count > 0").
 		Where("created_at < ?", cutoff).
 		Scan(ctx); err != nil {
 		logger.Error("recovery: query failed", "error", err)

@@ -22,13 +22,22 @@ func NewMessageStore(db *bun.DB) *MessageStore {
 }
 
 // Insert writes a message row. If source_message_id is set and a row with the same
-// (group_id, source_message_id) already exists, the insert is silently skipped.
+// source identity already exists, the insert is silently skipped.
 // Returns true if a new row was inserted, false if a conflict caused a no-op.
 func (s *MessageStore) Insert(ctx context.Context, msg *model.Message) (bool, error) {
-	res, err := s.db.NewInsert().
-		Model(msg).
-		On("CONFLICT ON CONSTRAINT messages_group_id_source_message_id_key DO NOTHING").
-		Exec(ctx)
+	q := s.db.NewInsert().
+		Model(msg)
+
+	switch {
+	case msg.GroupSourceID != nil && msg.SourceMessageID != nil:
+		q = q.On("CONFLICT (group_source_id, source_message_id) WHERE group_source_id IS NOT NULL AND source_message_id IS NOT NULL DO NOTHING")
+	case msg.SourceMessageID != nil:
+		q = q.On("CONFLICT (group_id, source_message_id) WHERE group_source_id IS NULL AND source_message_id IS NOT NULL DO NOTHING")
+	default:
+		q = q.On("CONFLICT (group_id, content_hash, timestamp) WHERE source_message_id IS NULL AND content_hash IS NOT NULL DO NOTHING")
+	}
+
+	res, err := q.Exec(ctx)
 	if err != nil {
 		return false, fmt.Errorf("insert message: %w", err)
 	}
