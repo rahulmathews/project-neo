@@ -93,46 +93,82 @@ func parseDepartureTime(content string, messageTime time.Time, parsed *ParsedRid
 		// Relative time ("in 30 mins") — no absolute DepartureTime stored
 		return
 	}
-	m := timeRe.FindStringSubmatch(content)
-	if len(m) != 4 {
+	clock, ok := parseClockTime(timeRe.FindStringSubmatch(content))
+	if !ok {
 		return
 	}
 
-	hour, err := strconv.Atoi(m[1])
-	if err != nil || hour < 1 || hour > 12 {
-		return
-	}
-	minute := 0
-	if m[2] != "" {
-		minute, err = strconv.Atoi(m[2])
-		if err != nil || minute > 59 {
-			return
-		}
-	}
-
-	period := strings.ToLower(m[3])
-	if period == "pm" && hour != 12 {
-		hour += 12
-	}
-	if period == "am" && hour == 12 {
-		hour = 0
-	}
-	if period == "night" {
-		if hour == 12 {
-			hour = 0
-		} else if hour >= 6 {
-			hour += 12
-		}
-	}
-
-	if messageTime.IsZero() {
-		messageTime = time.Now()
-	}
-	dep := time.Date(messageTime.Year(), messageTime.Month(), messageTime.Day(), hour, minute, 0, 0, messageTime.Location())
+	base := messageTimeOrNow(messageTime)
+	dep := time.Date(base.Year(), base.Month(), base.Day(), clock.hour, clock.minute, 0, 0, base.Location())
 	if tomorrowRe.MatchString(content) {
 		dep = dep.AddDate(0, 0, 1)
 	}
 	parsed.DepartureTime = &dep
+}
+
+type parsedClockTime struct {
+	hour   int
+	minute int
+}
+
+func parseClockTime(m []string) (parsedClockTime, bool) {
+	if len(m) != 4 {
+		return parsedClockTime{}, false
+	}
+	hour, err := strconv.Atoi(m[1])
+	if err != nil || hour < 1 || hour > 12 {
+		return parsedClockTime{}, false
+	}
+	minute, ok := parseClockMinute(m[2])
+	if !ok {
+		return parsedClockTime{}, false
+	}
+	return parsedClockTime{hour: normalizeClockHour(hour, strings.ToLower(m[3])), minute: minute}, true
+}
+
+func parseClockMinute(raw string) (int, bool) {
+	if raw == "" {
+		return 0, true
+	}
+	minute, err := strconv.Atoi(raw)
+	if err != nil || minute > 59 {
+		return 0, false
+	}
+	return minute, true
+}
+
+func normalizeClockHour(hour int, period string) int {
+	switch period {
+	case "pm":
+		if hour != 12 {
+			return hour + 12
+		}
+	case "am":
+		if hour == 12 {
+			return 0
+		}
+	case "night":
+		return normalizeNightHour(hour)
+	}
+	return hour
+}
+
+func normalizeNightHour(hour int) int {
+	switch {
+	case hour == 12:
+		return 0
+	case hour >= 6:
+		return hour + 12
+	default:
+		return hour
+	}
+}
+
+func messageTimeOrNow(messageTime time.Time) time.Time {
+	if messageTime.IsZero() {
+		return time.Now()
+	}
+	return messageTime
 }
 
 // extractWithRegex attempts structured extraction from content.

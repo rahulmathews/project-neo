@@ -49,20 +49,6 @@ type Ride struct {
 	UpdatedAt           time.Time  `bun:"updated_at,nullzero"`
 }
 
-type RideOccurrence struct {
-	bun.BaseModel `bun:"table:ride_occurrences,alias:ro"`
-
-	ID               uuid.UUID  `bun:"id,pk,type:uuid"`
-	RideID           uuid.UUID  `bun:"ride_id,type:uuid"`
-	MessageID        uuid.UUID  `bun:"message_id,type:uuid"`
-	GroupID          uuid.UUID  `bun:"group_id,type:uuid"`
-	GroupSourceID    *uuid.UUID `bun:"group_source_id,type:uuid"`
-	SenderIdentifier *string    `bun:"sender_identifier"`
-	ContentHash      *string    `bun:"content_hash"`
-	MessageTimestamp time.Time  `bun:"message_timestamp"`
-	CreatedAt        time.Time  `bun:"created_at,nullzero"`
-}
-
 type RideFilter struct {
 	GroupID uuid.UUID
 	Type    *RideType

@@ -19,16 +19,22 @@ func resolveLocation(ctx context.Context, db *bun.DB, locationText *string, grou
 	if locationText == nil || *locationText == "" {
 		return nil
 	}
+	normalized := normalizeAliasKey(*locationText)
+	if normalized == "" {
+		return nil
+	}
 
 	var lc model.LocationContext
 	err := db.NewSelect().
 		Model(&lc).
 		Where("group_id = ?", groupID).
-		Where("LOWER(location_alias) = LOWER(?)", *locationText).
+		Where("alias_normalized = ?", normalized).
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.Info("location unresolved", "text", *locationText, "normalized", normalized, "group_id", groupID)
+		} else {
 			logger.Warn("location resolve error", "text", *locationText, "group_id", groupID, "error", err)
 		}
 		return nil

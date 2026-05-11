@@ -14,9 +14,9 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// writeRide assembles a model.Ride from the parsed result and inserts it.
-// On success it marks the message SUCCESS and returns nil.
-// On insert failure it returns the error — the caller owns markFailed.
+// writeRide upserts a canonical ride keyed by semantic fingerprint, then
+// links the source message to it via messages.ride_id. Two messages with the
+// same fingerprint converge on the same canonical ride row.
 func writeRide(
 	ctx context.Context,
 	db *bun.DB,
@@ -27,7 +27,7 @@ func writeRide(
 	m *metrics.Parser,
 	logger *slog.Logger,
 ) error {
-	fingerprint := rideSemanticFingerprint(msg, parsed)
+	fingerprint := rideSemanticFingerprint(ctx, db, msg, parsed)
 
 	ride := &model.Ride{
 		ID:                  uuid.New(),
@@ -50,47 +50,30 @@ func writeRide(
 	}
 
 	rideStore := sharedpostgres.NewRideStore(db)
-	canonicalRide, inserted, err := findLegacyCanonicalRide(ctx, rideStore, msg, parsed, fingerprint)
+	canonicalRide, inserted, err := rideStore.UpsertCanonicalRide(ctx, ride)
 	if err != nil {
-		logger.Error("writer: find legacy canonical ride", "msg_id", msg.ID, "error", err)
-		return fmt.Errorf("ride insert: %w", err)
-	}
-	if canonicalRide == nil {
-		canonicalRide, inserted, err = rideStore.UpsertCanonicalRide(ctx, ride)
-		if err != nil {
-			logger.Error("writer: insert ride", "msg_id", msg.ID, "error", err)
-			return fmt.Errorf("ride insert: %w", err)
-		}
+		logger.Error("writer: upsert canonical ride", "msg_id", msg.ID, "error", err)
+		return fmt.Errorf("ride upsert: %w", err)
 	}
 
-	occurrence := &model.RideOccurrence{
-		RideID:           canonicalRide.ID,
-		MessageID:        msg.ID,
-		GroupID:          msg.GroupID,
-		GroupSourceID:    msg.GroupSourceID,
-		SenderIdentifier: msg.SenderIdentifier,
-		ContentHash:      &msg.ContentHash,
-		MessageTimestamp: msg.Timestamp,
+	if err := linkMessageToRide(ctx, db, msg.ID, canonicalRide.ID); err != nil {
+		logger.Error("writer: link message to ride", "msg_id", msg.ID, "ride_id", canonicalRide.ID, "error", err)
+		return fmt.Errorf("link message to ride: %w", err)
 	}
-	if _, err := rideStore.InsertRideOccurrence(ctx, occurrence); err != nil {
-		logger.Error("writer: insert ride occurrence", "msg_id", msg.ID, "ride_id", canonicalRide.ID, "error", err)
-		return fmt.Errorf("ride occurrence insert: %w", err)
-	}
+
 	markSuccess(ctx, db, msg.ID, m, logger)
-	logger.Info("parser: ride occurrence recorded", "ride_id", canonicalRide.ID, "msg_id", msg.ID, "type", canonicalRide.Type, "canonical_inserted", inserted)
+	logger.Info("parser: ride linked", "ride_id", canonicalRide.ID, "msg_id", msg.ID, "type", canonicalRide.Type, "canonical_inserted", inserted)
 	return nil
 }
 
-func findLegacyCanonicalRide(ctx context.Context, rideStore *sharedpostgres.RideStore, msg *model.Message, parsed *ParsedRide, primaryFingerprint string) (*model.Ride, bool, error) {
-	legacyFingerprint := legacyRideSemanticFingerprint(msg, parsed)
-	if legacyFingerprint == "" || legacyFingerprint == primaryFingerprint {
-		return nil, false, nil
-	}
-	ride, err := rideStore.GetBySemanticFingerprint(ctx, legacyFingerprint)
-	if err != nil || ride == nil {
-		return ride, false, err
-	}
-	return ride, false, nil
+// linkMessageToRide sets messages.ride_id linking this message to its canonical ride.
+func linkMessageToRide(ctx context.Context, db *bun.DB, msgID, rideID uuid.UUID) error {
+	_, err := db.NewUpdate().
+		TableExpr("messages").
+		Set("ride_id = ?", rideID).
+		Where("id = ?", msgID).
+		Exec(ctx)
+	return err
 }
 
 func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) {

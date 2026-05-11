@@ -33,14 +33,19 @@ func (r *rideRepository) List(ctx context.Context, filter model.RideFilter) ([]*
 	var rides []*model.Ride
 	q := r.db.NewSelect().
 		Model(&rides).
-		Where("(EXISTS (SELECT 1 FROM ride_occurrences ro WHERE ro.ride_id = r.id AND ro.group_id = ?) OR (r.group_id = ? AND NOT EXISTS (SELECT 1 FROM ride_occurrences ro2 WHERE ro2.ride_id = r.id)))", filter.GroupID, filter.GroupID)
+		Where(
+			"(EXISTS (SELECT 1 FROM messages msg WHERE msg.ride_id = r.id AND msg.group_id = ?) "+
+				"OR (r.group_id = ? AND NOT EXISTS (SELECT 1 FROM messages msg2 WHERE msg2.ride_id = r.id)))",
+			filter.GroupID, filter.GroupID)
 	if filter.Type != nil {
 		q = q.Where("r.type = ?", *filter.Type)
 	}
 	if filter.Status != nil {
 		q = q.Where("r.status = ?", *filter.Status)
 	}
-	q = q.OrderExpr("COALESCE((SELECT max(ro.message_timestamp) FROM ride_occurrences ro WHERE ro.ride_id = r.id AND ro.group_id = ?), r.created_at) DESC", filter.GroupID).
+	q = q.OrderExpr(
+		"COALESCE((SELECT max(msg.timestamp) FROM messages msg WHERE msg.ride_id = r.id AND msg.group_id = ?), r.created_at) DESC",
+		filter.GroupID).
 		Limit(filter.Limit).
 		Offset(filter.Offset)
 	if err := q.Scan(ctx); err != nil {

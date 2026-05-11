@@ -35,6 +35,7 @@ type Message struct {
 	ParseStatus      ParseStatus `bun:"parse_status"`
 	ParseError       *string     `bun:"parse_error"`
 	RetryCount       int         `bun:"retry_count"`
+	RideID           *uuid.UUID  `bun:"ride_id,type:uuid"`
 	CreatedAt        time.Time   `bun:"created_at,nullzero"`
 }
 
