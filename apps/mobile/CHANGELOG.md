@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/rahulmathews/project-neo/compare/mobile-v0.0.2...mobile-v0.0.3) (2026-05-11)
+
+
+### Features
+
+* Added some more migrations for the deduplkications ([d6b83bf](https://github.com/rahulmathews/project-neo/commit/d6b83bf1ff83a01fdbcb0ed8bb4faab5b4882108))
+
 ## [0.0.2](https://github.com/rahulmathews/project-neo/compare/mobile-v0.0.1...mobile-v0.0.2) (2026-04-24)
 
 
