@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.6](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.5...workers-v0.0.6) (2026-07-12)
+
+
+### Features
+
+* Added Promethewus metrics ([abd3142](https://github.com/rahulmathews/project-neo/commit/abd31427ff0c29fc624a81370faf4b7a6a02c55c))
+* Added Promethewus metrics ([cfaeb31](https://github.com/rahulmathews/project-neo/commit/cfaeb31d8315dbd6ebc03a0f4f9d0cb4c2db03ae))
+* Added some more migrations for the deduplkications ([d6b83bf](https://github.com/rahulmathews/project-neo/commit/d6b83bf1ff83a01fdbcb0ed8bb4faab5b4882108))
+
+
+### Bug Fixes
+
+* **graphql-api:** regenerate gqlgen code for 0.17.94 ([86f3d67](https://github.com/rahulmathews/project-neo/commit/86f3d67b9d456818cb92e98343d919d198803a6b))
+
 ## [0.0.5](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.4...workers-v0.0.5) (2026-05-08)
 
 
