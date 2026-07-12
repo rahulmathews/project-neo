@@ -32,7 +32,8 @@ func NewLLMProvider(logger *slog.Logger) LLMProvider {
 
 	apiKey := os.Getenv("OLLAMA_API_KEY")
 
-	logger.Info("llm provider configured",
+	logger.Info(
+		"llm provider configured",
 		"base_url", baseURL,
 		"model", model,
 		"auth", apiKey != "",

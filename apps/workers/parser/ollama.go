@@ -125,7 +125,8 @@ func (p *OllamaProvider) Extract(ctx context.Context, content, groupName string)
 		return nil, fmt.Errorf("ollama: unknown ride_type %q", *or.RideType)
 	}
 
-	p.logger.Debug("ollama parsed (regex miss)",
+	p.logger.Debug(
+		"ollama parsed (regex miss)",
 		"content", content,
 		"ride_type", parsed.RideType,
 		"from", parsed.FromLocationText,
