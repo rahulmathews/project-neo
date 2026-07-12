@@ -21,7 +21,8 @@ import (
 func StartListener(ctx context.Context, databaseURL string, bunDB *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger, onReady func()) error {
 	msgStore := sharedpostgres.NewMessageStore(bunDB)
 
-	listener := pq.NewListener(databaseURL, 10*time.Second, time.Minute,
+	listener := pq.NewListener(
+		databaseURL, 10*time.Second, time.Minute,
 		func(ev pq.ListenerEventType, err error) {
 			if err != nil {
 				logger.Error("parser pg listener event", "event", ev, "error", err)

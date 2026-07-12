@@ -22,7 +22,8 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rv := recover(); rv != nil {
-					logger.Error("panic in handler",
+					logger.Error(
+						"panic in handler",
 						"path", r.URL.Path,
 						"method", r.Method,
 						"panic", rv,
@@ -70,7 +71,8 @@ func RequestLog(logger *slog.Logger, skipPrefixes ...string) func(http.Handler) 
 			start := time.Now()
 			rec := &statusRecorder{ResponseWriter: w}
 			next.ServeHTTP(rec, r)
-			logger.Info("request",
+			logger.Info(
+				"request",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", rec.status,
