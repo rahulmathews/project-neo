@@ -18,6 +18,7 @@ import (
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
 	"project-neo/workers/internal/metrics"
+	"project-neo/workers/internal/sweeper"
 	"project-neo/workers/parser"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -54,13 +55,14 @@ func run() error {
 		port = "8083"
 	}
 	reg := metrics.NewRegistry()
-	httpMetrics, parserMetrics := metrics.New(reg)
+	httpMetrics, parserMetrics, sweeperMetrics := metrics.New(reg)
 	health := newRuntimeHealth()
 	srv := startHealthServer(port, logger, reg, httpMetrics, health)
 
 	parser.ConfigureTimezone(logger)
 	provider := parser.NewLLMProvider(logger)
 	go parser.StartRecovery(ctx, bunDB, provider, parserMetrics, logger)
+	go sweeper.Start(ctx, bunDB, sweeperMetrics, logger)
 	fatalErr := make(chan error, 1)
 	go func() {
 		if err := parser.StartListener(ctx, databaseURL, bunDB, provider, parserMetrics, logger, health.markParserReady); err != nil {

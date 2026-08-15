@@ -26,8 +26,13 @@ type Parser struct {
 	Retries         prometheus.Counter
 }
 
-// New registers HTTP + Parser collectors on the given registry.
-func New(reg prometheus.Registerer) (*HTTP, *Parser) {
+// Sweeper holds ride-expiry collectors.
+type Sweeper struct {
+	RidesExpired prometheus.Counter
+}
+
+// New registers HTTP + Parser + Sweeper collectors on the given registry.
+func New(reg prometheus.Registerer) (*HTTP, *Parser, *Sweeper) {
 	h := &HTTP{
 		RequestsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "workers",
@@ -70,11 +75,20 @@ func New(reg prometheus.Registerer) (*HTTP, *Parser) {
 			Help:      "Total retry attempts triggered by transient failures.",
 		}),
 	}
+	s := &Sweeper{
+		RidesExpired: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "workers",
+			Subsystem: "sweeper",
+			Name:      "rides_expired_total",
+			Help:      "Rides moved AVAILABLE → EXPIRED by the expiry sweep.",
+		}),
+	}
 	reg.MustRegister(
 		h.RequestsTotal, h.RequestDuration,
 		p.Messages, p.Extractor, p.ExtractDuration, p.Retries,
+		s.RidesExpired,
 	)
-	return h, p
+	return h, p, s
 }
 
 // NewRegistry returns a registry seeded with Go runtime + process collectors.
