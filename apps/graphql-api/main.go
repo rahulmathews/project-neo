@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,6 +11,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -98,8 +100,9 @@ func run(logger *slog.Logger) error {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker)
-	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg)
+	health := newRuntimeHealth()
+	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker, health.listenerUp, health.listenerDown)
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg, health)
 
 	httpSrv := &http.Server{
 		Addr:              ":" + port,
@@ -160,6 +163,7 @@ func buildRootHandler(
 	logger *slog.Logger,
 	httpMetrics *metrics.HTTP,
 	reg *prometheus.Registry,
+	health *runtimeHealth,
 ) http.Handler {
 	gqlSrv := buildGraphQLServer(resolver, verifier, isProd, logger)
 	mux := http.NewServeMux()
@@ -179,7 +183,16 @@ func buildRootHandler(
 	))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
+		up, reason := health.snapshot()
+		body := map[string]string{"status": "ok", "service": "graphql-api", "listener": "ok"}
+		if !up {
+			// A dead pg listener means every GraphQL subscription is silently
+			// frozen — surface it as unhealthy so Docker notices.
+			w.WriteHeader(http.StatusServiceUnavailable)
+			body["status"] = "degraded"
+			body["listener"] = reason
+		}
+		_ = json.NewEncoder(w).Encode(body)
 	})
 	mux.Handle("/metrics", metrics.Handler(reg))
 	return httpx.Chain(
@@ -250,6 +263,42 @@ type httpConfig struct {
 	maxBodyBytes   int64
 	rateLimitRPS   int
 	rateLimitBurst int
+}
+
+// runtimeHealth tracks the pg listener state feeding /health. Callbacks are
+// invoked from pq's internal goroutines, hence the mutex.
+type runtimeHealth struct {
+	mu          sync.RWMutex
+	listenerOK  bool
+	listenerErr string
+}
+
+func newRuntimeHealth() *runtimeHealth {
+	return &runtimeHealth{listenerErr: "starting"}
+}
+
+func (h *runtimeHealth) listenerUp() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.listenerOK = true
+	h.listenerErr = ""
+}
+
+func (h *runtimeHealth) listenerDown(err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.listenerOK = false
+	if err != nil {
+		h.listenerErr = err.Error()
+	} else {
+		h.listenerErr = "down"
+	}
+}
+
+func (h *runtimeHealth) snapshot() (bool, string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.listenerOK, h.listenerErr
 }
 
 // complexityLimit reads GRAPHQL_COMPLEXITY_LIMIT (default 300; 0 disables).
