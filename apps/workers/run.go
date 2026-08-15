@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"project-neo/shared/logging"
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
 	"project-neo/workers/internal/metrics"
@@ -23,7 +24,7 @@ import (
 )
 
 func run() error {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := logging.New()
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
