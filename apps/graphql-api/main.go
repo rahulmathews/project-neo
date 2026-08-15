@@ -89,7 +89,9 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
-	broker := ipostgres.NewBroker()
+	reg := metrics.NewRegistry()
+	httpMetrics := metrics.New(reg)
+	broker := ipostgres.NewBroker(logger, metrics.NewSubscriptions(reg))
 
 	rideRepo := postgres.NewRideRepository(db)
 	matchRepo := postgres.NewMatchRepository(db)
@@ -97,9 +99,6 @@ func run(logger *slog.Logger) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker)
-
-	reg := metrics.NewRegistry()
-	httpMetrics := metrics.New(reg)
 	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg)
 
 	httpSrv := &http.Server{
