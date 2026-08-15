@@ -64,7 +64,34 @@ func (s *RideStore) UpsertCanonicalRide(ctx context.Context, ride *model.Ride) (
 	if existing == nil {
 		return nil, false, fmt.Errorf("canonical ride not found after conflict: %s", *ride.SemanticFingerprint)
 	}
+	if err := s.reviveIfExpired(ctx, existing); err != nil {
+		return nil, false, err
+	}
 	return existing, false, nil
+}
+
+// reviveIfExpired flips an EXPIRED canonical ride back to AVAILABLE when an
+// identical message is re-posted — the repost is fresh demand, and without
+// this the expiry sweep would permanently swallow reposted rides. The status
+// guard keeps MATCHED/COMPLETED/CANCELLED untouched.
+func (s *RideStore) reviveIfExpired(ctx context.Context, ride *model.Ride) error {
+	if ride.Status != model.RideStatusExpired {
+		return nil
+	}
+	res, err := s.db.NewUpdate().
+		Model((*model.Ride)(nil)).
+		Set("status = ?", model.RideStatusAvailable).
+		Set("updated_at = now()").
+		Where("r.id = ?", ride.ID).
+		Where("r.status = ?", model.RideStatusExpired).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("revive expired ride: %w", err)
+	}
+	if rows, err := res.RowsAffected(); err == nil && rows > 0 {
+		ride.Status = model.RideStatusAvailable
+	}
+	return nil
 }
 
 func (s *RideStore) GetBySemanticFingerprint(ctx context.Context, fingerprint string) (*model.Ride, error) {
