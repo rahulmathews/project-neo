@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Debug builds talk to the local backend over plain http/ws
+         (10.0.2.2 from the emulator, a LAN IP from a physical device).
+         targetSdk >= 28 blocks cleartext by default; release builds
+         intentionally stay strict. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>
