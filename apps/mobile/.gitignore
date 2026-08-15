@@ -1,3 +1,6 @@
+# Local runtime config — holds the Supabase anon key, never commit it.
+.env.json
+
 # Miscellaneous
 *.class
 *.log
