@@ -16,6 +16,7 @@ import (
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
+	"project-neo/graphql-api/internal/gqlerrors"
 	"project-neo/graphql-api/internal/httpx"
 	"project-neo/graphql-api/internal/metrics"
 	ipostgres "project-neo/graphql-api/internal/postgres"
@@ -129,10 +130,15 @@ func buildResolver(
 	}
 }
 
-func buildGraphQLServer(resolver *resolvers.Resolver, verifier *auth.Verifier, isProd bool) *handler.Server {
+func buildGraphQLServer(resolver *resolvers.Resolver, verifier *auth.Verifier, isProd bool, logger *slog.Logger) *handler.Server {
 	gqlSrv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
+	gqlSrv.SetErrorPresenter(gqlerrors.Presenter(logger))
+	gqlSrv.SetRecoverFunc(gqlerrors.RecoverFunc(logger))
+	if limit := complexityLimit(); limit > 0 {
+		gqlSrv.Use(extension.FixedComplexityLimit(limit))
+	}
 	if !isProd {
 		gqlSrv.Use(extension.Introspection{})
 	}
@@ -156,7 +162,7 @@ func buildRootHandler(
 	httpMetrics *metrics.HTTP,
 	reg *prometheus.Registry,
 ) http.Handler {
-	gqlSrv := buildGraphQLServer(resolver, verifier, isProd)
+	gqlSrv := buildGraphQLServer(resolver, verifier, isProd, logger)
 	mux := http.NewServeMux()
 	if isProd {
 		mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -245,6 +251,20 @@ type httpConfig struct {
 	maxBodyBytes   int64
 	rateLimitRPS   int
 	rateLimitBurst int
+}
+
+// complexityLimit reads GRAPHQL_COMPLEXITY_LIMIT (default 300; 0 disables).
+// Caps damage from deeply nested queries until dataloaders land.
+func complexityLimit() int {
+	v := os.Getenv("GRAPHQL_COMPLEXITY_LIMIT")
+	if v == "" {
+		return 300
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 300
+	}
+	return n
 }
 
 func loadHTTPConfig() httpConfig {

@@ -160,12 +160,16 @@ func (v *Verifier) keyFor(t *jwt.Token) (interface{}, error) {
 	}
 }
 
+// ErrUnauthenticated marks requests with no verified user in context. The
+// GraphQL error presenter maps it to the UNAUTHENTICATED code.
+var ErrUnauthenticated = errors.New("unauthenticated")
+
 // UserIDFromCtx extracts the authenticated user's UUID from context.
-// Returns an error if the user is not authenticated.
+// Returns ErrUnauthenticated if the user is not authenticated.
 func UserIDFromCtx(ctx context.Context) (uuid.UUID, error) {
 	id, ok := ctx.Value(contextKeyUserID).(uuid.UUID)
 	if !ok {
-		return uuid.UUID{}, errors.New("unauthenticated")
+		return uuid.UUID{}, ErrUnauthenticated
 	}
 	return id, nil
 }
