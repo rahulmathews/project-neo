@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -94,6 +95,14 @@ func maxConcurrentParses(logger *slog.Logger) int {
 }
 
 func handleNotification(ctx context.Context, id uuid.UUID, msgStore *sharedpostgres.MessageStore, db *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
+	// Each notification runs in its own goroutine: an unrecovered panic here
+	// would kill the whole workers service, not just this message.
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("parser: panic recovered",
+				"msg_id", id, "panic", r, "stack", string(debug.Stack()))
+		}
+	}()
 	msg, err := msgStore.GetByID(ctx, id)
 	if err != nil {
 		logger.Error("parser listener: fetch message", "id", id, "error", err)
