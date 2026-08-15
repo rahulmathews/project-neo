@@ -113,6 +113,9 @@ func NewClient(
 	return c, nil
 }
 
+// Name identifies this connector in health output and logs.
+func (c *Client) Name() string { return "whatsapp" }
+
 // Run connects (QR pairing on first run, silent resume thereafter), syncs the
 // account's joined groups into the database, installs the message handler,
 // and blocks until ctx is cancelled or the account is unlinked. It returns

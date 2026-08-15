@@ -74,7 +74,7 @@ func run() error {
 
 	// Connectors last, supervised: connection failures and pending QR pairing
 	// must never crash the service — the parser pipeline works regardless.
-	sup := workersinternal.StartConnectorSupervisor(ctx, bunDB, logger, health.setWhatsApp)
+	sup := workersinternal.StartConnectorSupervisor(ctx, bunDB, logger, health.setConnector)
 
 	return waitForShutdown(cancel, sup, srv, fatalErr, logger)
 }
@@ -91,24 +91,24 @@ func startHealthServer(port string, logger *slog.Logger, reg *prometheus.Registr
 	mux := http.NewServeMux()
 	mux.Handle("/health", instrumentHTTP(httpMetrics, "/health", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		parserOK, parserReason, waStatus := health.snapshot()
+		parserOK, parserReason, connectors := health.snapshot()
 		status := "ok"
 		if !parserOK {
 			// The parser listener is the service's core — its failure is a
 			// real fault and makes the container unhealthy.
 			w.WriteHeader(http.StatusServiceUnavailable)
 			status = "degraded"
-		} else if waStatus != "connected" {
-			// WhatsApp pairing is an operator step, not a fault: report
+		} else if anyConnectorDown(connectors) {
+			// Connector pairing is an operator step, not a fault: report
 			// degraded but stay 200 so `docker compose up` is green on a
 			// fresh machine while the QR waits in the logs.
 			status = "degraded"
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status":          status,
 			"service":         "workers",
 			"parser_listener": parserReason,
-			"whatsapp":        waStatus,
+			"connectors":      connectors,
 		})
 	})))
 	mux.Handle("/metrics", metrics.Handler(reg))
@@ -129,15 +129,26 @@ func startHealthServer(port string, logger *slog.Logger, reg *prometheus.Registr
 	return srv
 }
 
+// anyConnectorDown reports whether an enabled connector is not connected.
+// "disabled" is operator intent, not degradation.
+func anyConnectorDown(connectors map[string]string) bool {
+	for _, status := range connectors {
+		if status != "connected" && status != "disabled" {
+			return true
+		}
+	}
+	return false
+}
+
 type runtimeHealth struct {
 	mu          sync.RWMutex
 	parserReady bool
 	parserErr   string
-	waStatus    string
+	connectors  map[string]string
 }
 
 func newRuntimeHealth() *runtimeHealth {
-	return &runtimeHealth{waStatus: "starting"}
+	return &runtimeHealth{connectors: map[string]string{}}
 }
 
 func (h *runtimeHealth) markParserReady() {
@@ -154,23 +165,26 @@ func (h *runtimeHealth) markParserFailed(err error) {
 	h.parserErr = err.Error()
 }
 
-func (h *runtimeHealth) setWhatsApp(status string) {
+func (h *runtimeHealth) setConnector(name, status string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.waStatus = status
+	h.connectors[name] = status
 }
 
-func (h *runtimeHealth) snapshot() (parserOK bool, parserReason, waStatus string) {
+func (h *runtimeHealth) snapshot() (parserOK bool, parserReason string, connectors map[string]string) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	waStatus = h.waStatus
+	connectors = make(map[string]string, len(h.connectors))
+	for name, status := range h.connectors {
+		connectors[name] = status
+	}
 	if h.parserErr != "" {
-		return false, h.parserErr, waStatus
+		return false, h.parserErr, connectors
 	}
 	if !h.parserReady {
-		return false, "starting", waStatus
+		return false, "starting", connectors
 	}
-	return true, "ok", waStatus
+	return true, "ok", connectors
 }
 
 type statusRecorder struct {
