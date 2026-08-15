@@ -198,7 +198,11 @@ func buildRootHandler(
 		}
 		_ = json.NewEncoder(w).Encode(body)
 	})
-	mux.Handle("/metrics", metrics.Handler(reg))
+	// Prometheus metrics stay off the public surface in production unless
+	// explicitly opted in — the endpoint sits outside the auth/rate-limit chain.
+	if !isProd || strings.EqualFold(os.Getenv("METRICS_PUBLIC"), "true") {
+		mux.Handle("/metrics", metrics.Handler(reg))
+	}
 	return httpx.Chain(
 		mux,
 		httpx.Recover(logger),

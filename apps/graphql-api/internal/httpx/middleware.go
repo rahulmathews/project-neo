@@ -133,11 +133,21 @@ func BodyLimit(maxBytes int64) func(http.Handler) http.Handler {
 
 // CORS configures cross-origin handling. allowedOrigins supports "*" or a list.
 func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
+	// "*" + credentials is an invalid combination: rs/cors then reflects the
+	// request origin, effectively allowing credentialed requests from anywhere.
+	// Credentials are only enabled for an explicit origin allowlist.
+	allowCredentials := true
+	for _, o := range allowedOrigins {
+		if o == "*" {
+			allowCredentials = false
+			break
+		}
+	}
 	c := cors.New(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodDelete},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
-		AllowCredentials: true,
+		AllowCredentials: allowCredentials,
 		MaxAge:           int((12 * time.Hour).Seconds()),
 	})
 	return c.Handler
