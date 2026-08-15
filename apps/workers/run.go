@@ -54,6 +54,7 @@ func run() error {
 	health := newRuntimeHealth()
 	srv := startHealthServer(port, logger, reg, httpMetrics, health)
 
+	parser.ConfigureTimezone(logger)
 	provider := parser.NewLLMProvider(logger)
 	go parser.StartRecovery(ctx, bunDB, provider, parserMetrics, logger)
 	fatalErr := make(chan error, 1)
