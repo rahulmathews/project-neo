@@ -19,6 +19,7 @@ import (
 	"project-neo/graphql-api/internal/httpx"
 	"project-neo/graphql-api/internal/metrics"
 	ipostgres "project-neo/graphql-api/internal/postgres"
+	"project-neo/shared/logging"
 	"project-neo/shared/postgres"
 	"project-neo/shared/repository"
 
@@ -36,7 +37,7 @@ func main() {
 		os.Exit(runHealthcheck("http://localhost:8082/health"))
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := logging.New()
 	if err := run(logger); err != nil {
 		logger.Error("server error", "error", err)
 		os.Exit(1)
