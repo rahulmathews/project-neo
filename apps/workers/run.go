@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"project-neo/shared/errtrack"
 	"project-neo/shared/logging"
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
@@ -25,6 +26,8 @@ import (
 
 func run() error {
 	logger := logging.New()
+	flushErrTrack := errtrack.Init("workers", logger)
+	defer flushErrTrack()
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
@@ -62,6 +65,7 @@ func run() error {
 	go func() {
 		if err := parser.StartListener(ctx, databaseURL, bunDB, provider, parserMetrics, logger, health.markParserReady); err != nil {
 			health.markParserFailed(err)
+			errtrack.CaptureErr(err, map[string]string{"component": "parser_listener"})
 			fatalErr <- err
 		}
 	}()

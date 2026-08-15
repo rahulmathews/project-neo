@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"project-neo/shared/errtrack"
 	"project-neo/shared/model"
 	"project-neo/workers/internal/metrics"
 
@@ -71,6 +72,7 @@ func sweepStalePending(ctx context.Context, db *bun.DB, provider LLMProvider, m 
 		Scan(ctx); err != nil {
 		if ctx.Err() == nil {
 			logger.Error("recovery: query failed", "error", err)
+			errtrack.CaptureErr(err, map[string]string{"component": "parser_recovery"})
 		}
 		return
 	}

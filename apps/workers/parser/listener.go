@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"project-neo/shared/errtrack"
 	"project-neo/shared/model"
 	sharedpostgres "project-neo/shared/postgres"
 	"project-neo/workers/internal/metrics"
@@ -101,6 +102,10 @@ func handleNotification(ctx context.Context, id uuid.UUID, msgStore *sharedpostg
 		if r := recover(); r != nil {
 			logger.Error("parser: panic recovered",
 				"msg_id", id, "panic", r, "stack", string(debug.Stack()))
+			errtrack.CapturePanic(r, map[string]string{
+				"component": "parser",
+				"msg_id":    id.String(),
+			})
 		}
 	}()
 	msg, err := msgStore.GetByID(ctx, id)

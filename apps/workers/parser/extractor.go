@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"project-neo/shared/errtrack"
 	"project-neo/shared/model"
 	"project-neo/workers/internal/metrics"
 
@@ -57,6 +58,12 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, provider LLMPr
 				backoff *= backoffFactor
 				continue
 			}
+			// A ride-write failure is an infrastructure fault, unlike the
+			// expected regex-miss failures — report it.
+			errtrack.CaptureErr(err, map[string]string{
+				"component": "parser_writer",
+				"msg_id":    msg.ID.String(),
+			})
 			markFailed(ctx, db, msg.ID, err.Error(), m, logger)
 			return
 		}
