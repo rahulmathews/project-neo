@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"project-neo/graphql-api/internal/metrics"
+	"project-neo/shared/errtrack"
 
 	"github.com/google/uuid"
 	"github.com/rs/cors"
@@ -58,6 +59,10 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 						"panic", rv,
 						"stack", string(debug.Stack()),
 					)
+					errtrack.CapturePanic(rv, map[string]string{
+						"path":       r.URL.Path,
+						"request_id": RequestIDFromCtx(r.Context()),
+					})
 					http.Error(w, "internal server error", http.StatusInternalServerError)
 				}
 			}()

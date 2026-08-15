@@ -12,6 +12,7 @@ import (
 	"project-neo/graphql-api/internal/auth"
 	"project-neo/graphql-api/internal/httpx"
 	"project-neo/graphql-api/internal/validation"
+	"project-neo/shared/errtrack"
 	"project-neo/shared/repository"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -46,6 +47,10 @@ func Presenter(logger *slog.Logger) graphql.ErrorPresenterFunc {
 			"operation", operationName(ctx),
 			"path", presented.Path.String(),
 		)
+		errtrack.CaptureErr(err, map[string]string{
+			"request_id": httpx.RequestIDFromCtx(ctx),
+			"operation":  operationName(ctx),
+		})
 
 		masked := &gqlerror.Error{
 			Message: "internal server error",
@@ -67,6 +72,10 @@ func RecoverFunc(logger *slog.Logger) graphql.RecoverFunc {
 			"operation", operationName(ctx),
 			"stack", string(debug.Stack()),
 		)
+		errtrack.CapturePanic(p, map[string]string{
+			"request_id": httpx.RequestIDFromCtx(ctx),
+			"operation":  operationName(ctx),
+		})
 		return gqlerror.Errorf("internal server error")
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"project-neo/graphql-api/internal/httpx"
 	"project-neo/graphql-api/internal/metrics"
 	ipostgres "project-neo/graphql-api/internal/postgres"
+	"project-neo/shared/errtrack"
 	"project-neo/shared/logging"
 	"project-neo/shared/postgres"
 	"project-neo/shared/repository"
@@ -48,6 +49,9 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
+	flushErrTrack := errtrack.Init("graphql-api", logger)
+	defer flushErrTrack()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
