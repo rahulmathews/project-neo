@@ -44,11 +44,16 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, provider LLMPr
 
 		// Step 3: write ride
 		if err := writeRide(ctx, db, msg, parsed, fromID, toID, m, logger); err != nil {
+			if ctx.Err() != nil {
+				return // shutdown mid-write — row stays PENDING for recovery
+			}
 			logger.Warn("parser: write ride failed", "msg_id", msg.ID, "attempt", attempt, "error", err)
 			incrementRetryCount(ctx, db, msg.ID, err.Error(), logger)
 			if attempt < maxRetries {
 				m.Retries.Inc()
-				sleep(ctx, backoff)
+				if !sleep(ctx, backoff) {
+					return
+				}
 				backoff *= backoffFactor
 				continue
 			}
@@ -93,6 +98,11 @@ func extract(
 	var err error
 	parsed, err = provider.Extract(ctx, msg.Content, groupName)
 	m.ExtractDuration.WithLabelValues("llm").Observe(time.Since(llmStart).Seconds())
+	if ctx.Err() != nil {
+		// Shutdown mid-extraction: a cancelled LLM call must not be recorded
+		// as an outage or failure — leave the row PENDING for recovery.
+		return nil, true
+	}
 	if err == nil {
 		m.Extractor.WithLabelValues("llm", "success").Inc()
 		return parsed, false
@@ -130,7 +140,9 @@ func extract(
 	incrementRetryCount(ctx, db, msg.ID, err.Error(), logger)
 
 	if attempt < maxRetries {
-		sleep(ctx, *backoff)
+		if !sleep(ctx, *backoff) {
+			return nil, true
+		}
 		*backoff *= backoffFactor
 		return nil, false
 	}
@@ -139,11 +151,15 @@ func extract(
 	return nil, true
 }
 
-// sleep blocks for d or until ctx is cancelled.
-func sleep(ctx context.Context, d time.Duration) {
+// sleep blocks for d or until ctx is cancelled; reports whether the full
+// backoff elapsed. A false return means shutdown — callers must bail out and
+// leave the row PENDING for the recovery sweep instead of burning attempts.
+func sleep(ctx context.Context, d time.Duration) bool {
 	select {
 	case <-ctx.Done():
+		return false
 	case <-time.After(d):
+		return true
 	}
 }
 
