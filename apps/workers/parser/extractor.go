@@ -105,6 +105,15 @@ func extract(
 		return nil, true
 	}
 
+	if errors.Is(err, ErrLLMDisabled) {
+		// Regex-only mode: a miss here is a real parse failure to review, not an
+		// outage. The parse_error must point at the pattern gap, not at Ollama.
+		m.Extractor.WithLabelValues("llm", "disabled").Inc()
+		logger.Info("parser: no regex pattern matched (regex-only mode)", "msg_id", msg.ID)
+		markFailed(ctx, db, msg.ID, "no regex pattern matched (regex-only mode)", m, logger)
+		return nil, true
+	}
+
 	if errors.Is(err, ErrLLMUnavailable) {
 		// Retrying cannot help while the provider is down or disabled — fail
 		// fast with a clear parse_error instead of burning the retry budget.

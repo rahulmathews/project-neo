@@ -14,6 +14,11 @@ import (
 // The extractor fails such messages fast instead of burning the retry budget.
 var ErrLLMUnavailable = errors.New("llm unavailable")
 
+// ErrLLMDisabled marks the operator-chosen regex-only mode (OLLAMA_ENABLED=false).
+// It wraps ErrLLMUnavailable so availability handling still applies, but lets the
+// extractor record a regex miss as a plain parse failure rather than an outage.
+var ErrLLMDisabled = fmt.Errorf("%w: disabled via OLLAMA_ENABLED=false", ErrLLMUnavailable)
+
 // LLMProvider extracts structured ride data from a freeform message.
 // Implementations must be safe for concurrent use.
 type LLMProvider interface {
@@ -62,5 +67,5 @@ func NewLLMProvider(logger *slog.Logger) LLMProvider {
 type disabledProvider struct{}
 
 func (disabledProvider) Extract(context.Context, string, string) (*ParsedRide, error) {
-	return nil, fmt.Errorf("%w: disabled via OLLAMA_ENABLED=false", ErrLLMUnavailable)
+	return nil, ErrLLMDisabled
 }

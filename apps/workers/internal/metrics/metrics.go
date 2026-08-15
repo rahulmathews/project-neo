@@ -18,7 +18,8 @@ type HTTP struct {
 type Parser struct {
 	// Messages: outcome label = success|failed|skipped
 	Messages *prometheus.CounterVec
-	// Extractor: provider = regex|llm; outcome = matched|miss|success|not_a_ride|error
+	// Extractor: provider = regex|llm;
+	// outcome = matched|miss|success|not_a_ride|error|unavailable|disabled
 	Extractor *prometheus.CounterVec
 	// ExtractDuration: provider = regex|llm
 	ExtractDuration *prometheus.HistogramVec
