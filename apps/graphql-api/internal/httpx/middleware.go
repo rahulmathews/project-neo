@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"net/http"
@@ -12,9 +13,37 @@ import (
 
 	"project-neo/graphql-api/internal/metrics"
 
+	"github.com/google/uuid"
 	"github.com/rs/cors"
 	"golang.org/x/time/rate"
 )
+
+type ctxKey int
+
+const requestIDKey ctxKey = iota
+
+// RequestID assigns each request a correlation id — honoring an inbound
+// X-Request-ID so callers can stitch traces — exposes it on the response
+// header, and stashes it in the context for logs and error reports.
+func RequestID() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id := strings.TrimSpace(r.Header.Get("X-Request-ID"))
+			if id == "" || len(id) > 128 {
+				id = uuid.NewString()
+			}
+			w.Header().Set("X-Request-ID", id)
+			ctx := context.WithValue(r.Context(), requestIDKey, id)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RequestIDFromCtx returns the correlation id set by RequestID, or "".
+func RequestIDFromCtx(ctx context.Context) string {
+	id, _ := ctx.Value(requestIDKey).(string)
+	return id
+}
 
 // Recover catches panics in downstream handlers, logs the stack, and returns 500.
 func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
@@ -79,6 +108,7 @@ func RequestLog(logger *slog.Logger, skipPrefixes ...string) func(http.Handler) 
 				"bytes", rec.bytes,
 				"duration_ms", time.Since(start).Milliseconds(),
 				"remote", clientIP(r),
+				"request_id", RequestIDFromCtx(r.Context()),
 			)
 		})
 	}

@@ -180,6 +180,7 @@ func buildRootHandler(
 	return httpx.Chain(
 		mux,
 		httpx.Recover(logger),
+		httpx.RequestID(),
 		httpx.RequestLog(logger, "/health", "/metrics"),
 		httpx.CORS(cfg.allowedOrigins),
 	)
