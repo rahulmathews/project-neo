@@ -52,10 +52,28 @@ func run(logger *slog.Logger) error {
 	if dsn == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
+	// Newer Supabase versions sign user access tokens with an asymmetric key
+	// published at <supabase>/auth/v1/.well-known/jwks.json; the shared secret
+	// only verifies legacy HS256 tokens. At least one path must be configured.
 	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
-	if jwtSecret == "" {
-		return fmt.Errorf("SUPABASE_JWT_SECRET is required")
+	jwksURL := os.Getenv("SUPABASE_JWKS_URL")
+	if jwtSecret == "" && jwksURL == "" {
+		return fmt.Errorf("SUPABASE_JWT_SECRET or SUPABASE_JWKS_URL is required")
 	}
+	// AUTH_EXPECTED_AUDIENCE distinguishes unset (default "authenticated")
+	// from explicitly empty (audience check disabled — needed when accepting
+	// legacy anon/service-role keys, which carry no aud claim).
+	audience := "authenticated"
+	if v, ok := os.LookupEnv("AUTH_EXPECTED_AUDIENCE"); ok {
+		audience = v
+	}
+	verifier := auth.NewVerifier(auth.Config{
+		Secret:     jwtSecret,
+		JWKSURL:    jwksURL,
+		Audience:   audience,
+		Issuer:     os.Getenv("AUTH_EXPECTED_ISSUER"),
+		AllowHS256: strings.EqualFold(os.Getenv("AUTH_ALLOW_HS256"), "true"),
+	}, logger)
 	isProd := strings.EqualFold(os.Getenv("ENV"), "production")
 	cfg := loadHTTPConfig()
 
@@ -80,7 +98,7 @@ func run(logger *slog.Logger) error {
 
 	reg := metrics.NewRegistry()
 	httpMetrics := metrics.New(reg)
-	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), jwtSecret, cfg, isProd, logger, httpMetrics, reg)
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg)
 
 	httpSrv := &http.Server{
 		Addr:              ":" + port,
@@ -110,7 +128,7 @@ func buildResolver(
 	}
 }
 
-func buildGraphQLServer(resolver *resolvers.Resolver, jwtSecret string, isProd bool) *handler.Server {
+func buildGraphQLServer(resolver *resolvers.Resolver, verifier *auth.Verifier, isProd bool) *handler.Server {
 	gqlSrv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
@@ -123,21 +141,21 @@ func buildGraphQLServer(resolver *resolvers.Resolver, jwtSecret string, isProd b
 	gqlSrv.AddTransport(transport.MultipartForm{})
 	gqlSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
-		InitFunc:              websocketInitFunc(jwtSecret),
+		InitFunc:              websocketInitFunc(verifier),
 	})
 	return gqlSrv
 }
 
 func buildRootHandler(
 	resolver *resolvers.Resolver,
-	jwtSecret string,
+	verifier *auth.Verifier,
 	cfg httpConfig,
 	isProd bool,
 	logger *slog.Logger,
 	httpMetrics *metrics.HTTP,
 	reg *prometheus.Registry,
 ) http.Handler {
-	gqlSrv := buildGraphQLServer(resolver, jwtSecret, isProd)
+	gqlSrv := buildGraphQLServer(resolver, verifier, isProd)
 	mux := http.NewServeMux()
 	if isProd {
 		mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -149,7 +167,7 @@ func buildRootHandler(
 	mux.Handle("/query", httpx.Chain(
 		gqlSrv,
 		httpx.Metrics(httpMetrics, "/query"),
-		auth.Middleware(jwtSecret),
+		verifier.Middleware(),
 		httpx.RateLimit(cfg.rateLimitRPS, cfg.rateLimitBurst),
 		httpx.BodyLimit(cfg.maxBodyBytes),
 	))
@@ -196,7 +214,7 @@ func serveAndWait(ctx context.Context, srv *http.Server, logger *slog.Logger) er
 	return nil
 }
 
-func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
+func websocketInitFunc(verifier *auth.Verifier) transport.WebsocketInitFunc {
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, *transport.InitPayload, error) {
 		token := ""
 		for _, key := range []string{"Authorization", "authorization"} {
@@ -214,7 +232,7 @@ func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
 			}
 		}
 		if token != "" {
-			ctx = auth.ContextWithToken(ctx, token, jwtSecret)
+			ctx = verifier.ContextWithToken(ctx, token)
 		}
 		return ctx, nil, nil
 	}
