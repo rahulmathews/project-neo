@@ -146,13 +146,41 @@ func (c *Client) Run(ctx context.Context) error {
 	c.setStatus("connected")
 	c.logger.Info("whatsapp connector started", "groups", len(jidMap))
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-c.loggedOut:
-		c.setStatus("unlinked")
-		return nil
+	// Periodic group resync: whatsmeow reconnects internally without
+	// re-entering Run, so groups joined, renamed, or disabled mid-session
+	// would otherwise be missed until a supervisor-level restart.
+	resync := time.NewTicker(groupSyncInterval())
+	defer resync.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-c.loggedOut:
+			c.setStatus("unlinked")
+			return nil
+		case <-resync.C:
+			jidMap, srcMap, err := c.syncGroups(ctx)
+			if err != nil {
+				c.logger.Warn("whatsapp group resync failed", "error", err)
+				continue
+			}
+			c.setHandler(NewHandler(jidMap, srcMap, msgWriter, srcReader, c.logger, c.wg))
+		}
 	}
+}
+
+// groupSyncInterval reads WHATSAPP_GROUP_SYNC_INTERVAL (default 10m).
+func groupSyncInterval() time.Duration {
+	const def = 10 * time.Minute
+	raw := os.Getenv("WHATSAPP_GROUP_SYNC_INTERVAL")
+	if raw == "" {
+		return def
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil || d <= 0 {
+		return def
+	}
+	return d
 }
 
 // syncGroups fetches all WhatsApp groups the account is joined to, upserts
@@ -183,6 +211,24 @@ func (c *Client) syncGroups(ctx context.Context) (jidMap, srcMap map[string]uuid
 
 		jidMap[jid] = groupID
 		srcMap[jid] = sourceID
+	}
+
+	// Honor the operator kill-switch: only sources still active in the DB are
+	// monitored (the upserts above never re-activate a disabled source).
+	active, err := c.groupSourceStore.ListActive(ctx, model.SourceTypeWhatsApp)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list active sources: %w", err)
+	}
+	activeByJID := make(map[string]struct{}, len(active))
+	for _, src := range active {
+		activeByJID[src.SourceIdentifier] = struct{}{}
+	}
+	for jid := range jidMap {
+		if _, ok := activeByJID[jid]; !ok {
+			c.logger.Info("skipping disabled group source", "jid", jid)
+			delete(jidMap, jid)
+			delete(srcMap, jid)
+		}
 	}
 
 	c.logger.Info("synced whatsapp groups", "count", len(jidMap))
