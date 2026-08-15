@@ -53,9 +53,6 @@ func (r *rideRepository) List(ctx context.Context, filter model.RideFilter) ([]*
 	if err := q.Scan(ctx); err != nil {
 		return nil, fmt.Errorf("list rides: %w", err)
 	}
-	for _, ride := range rides {
-		ride.GroupID = filter.GroupID
-	}
 	return rides, nil
 }
 
