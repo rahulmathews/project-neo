@@ -105,6 +105,17 @@ func extract(
 		return nil, true
 	}
 
+	if errors.Is(err, ErrLLMUnavailable) {
+		// Retrying cannot help while the provider is down or disabled — fail
+		// fast with a clear parse_error instead of burning the retry budget.
+		m.Extractor.WithLabelValues("llm", "unavailable").Inc()
+		logger.Warn("parser: llm unavailable, failing fast", "msg_id", msg.ID, "error", err)
+		markFailed(ctx, db, msg.ID,
+			"llm unavailable — start Ollama or set OLLAMA_ENABLED=false ("+err.Error()+")",
+			m, logger)
+		return nil, true
+	}
+
 	m.Extractor.WithLabelValues("llm", "error").Inc()
 	logger.Warn("parser: extraction failed", "msg_id", msg.ID, "attempt", attempt, "error", err)
 	incrementRetryCount(ctx, db, msg.ID, err.Error(), logger)
