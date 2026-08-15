@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -23,6 +25,9 @@ func NewRideRepository(db *bun.DB) repository.RideRepository {
 func (r *rideRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Ride, error) {
 	ride := new(model.Ride)
 	err := r.db.NewSelect().Model(ride).Where("r.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get ride: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get ride: %w", err)
 	}
@@ -107,10 +112,10 @@ func (r *rideRepository) Update(ctx context.Context, id uuid.UUID, userID uuid.U
 		return nil, err
 	}
 	if ride.PosterUserID == nil || *ride.PosterUserID != userID {
-		return nil, fmt.Errorf("forbidden")
+		return nil, fmt.Errorf("update ride: %w", repository.ErrForbidden)
 	}
 	if ride.Status != model.RideStatusAvailable {
-		return nil, fmt.Errorf("ride is not available for editing")
+		return nil, fmt.Errorf("%w: ride is not available for editing", repository.ErrInvalidState)
 	}
 	q := r.db.NewUpdate().Model(ride).Where("r.id = ?", id).Set("updated_at = now()")
 	if input.DepartureTime != nil {
@@ -138,7 +143,7 @@ func (r *rideRepository) Cancel(ctx context.Context, id uuid.UUID, userID uuid.U
 		return nil, err
 	}
 	if ride.PosterUserID == nil || *ride.PosterUserID != userID {
-		return nil, fmt.Errorf("forbidden")
+		return nil, fmt.Errorf("cancel ride: %w", repository.ErrForbidden)
 	}
 	return r.SetStatus(ctx, id, model.RideStatusCancelled)
 }

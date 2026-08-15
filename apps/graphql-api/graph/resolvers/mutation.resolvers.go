@@ -13,6 +13,7 @@ import (
 	"project-neo/graphql-api/internal/auth"
 	"project-neo/graphql-api/internal/validation"
 	"project-neo/shared/model"
+	"project-neo/shared/repository"
 
 	"github.com/google/uuid"
 )
@@ -73,13 +74,13 @@ func (r *mutationResolver) AcceptMatch(ctx context.Context, rideID uuid.UUID) (*
 		return nil, err
 	}
 	if ride.PosterUserID == nil {
-		return nil, fmt.Errorf("ride poster is not a registered user — contact via WhatsApp relay")
+		return nil, fmt.Errorf("%w: ride poster is not a registered user — contact via WhatsApp relay", repository.ErrInvalidState)
 	}
 	if ride.Status != model.RideStatusAvailable {
-		return nil, fmt.Errorf("ride is not available")
+		return nil, fmt.Errorf("%w: ride is not available", repository.ErrInvalidState)
 	}
 	if *ride.PosterUserID == userID {
-		return nil, fmt.Errorf("cannot match with your own ride")
+		return nil, fmt.Errorf("%w: cannot match with your own ride", repository.ErrInvalidState)
 	}
 
 	riderID := userID
