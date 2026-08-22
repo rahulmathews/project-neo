@@ -64,6 +64,12 @@ func parseToken(ctx context.Context, tokenStr, secret string) context.Context {
 	return ctx
 }
 
+// ContextWithToken parses a bearer token and injects auth claims into context.
+// Invalid tokens are ignored and the original context is returned unchanged.
+func ContextWithToken(ctx context.Context, tokenStr, secret string) context.Context {
+	return parseToken(ctx, tokenStr, secret)
+}
+
 // UserIDFromCtx extracts the authenticated user's UUID from context.
 // Returns an error if the user is not authenticated.
 func UserIDFromCtx(ctx context.Context) (uuid.UUID, error) {

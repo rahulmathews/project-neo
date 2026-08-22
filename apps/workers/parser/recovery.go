@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"project-neo/shared/model"
+	"project-neo/workers/internal/metrics"
 
 	"github.com/uptrace/bun"
 )
@@ -20,16 +21,15 @@ const (
 	recoveryMaxConcurrent = 5
 )
 
-// StartRecovery queries for stale PENDING messages (retry_count > 0, older than
-// recoveryStaleness) and re-processes each one in a goroutine. Runs once at startup.
-func StartRecovery(ctx context.Context, db *bun.DB, provider LLMProvider, logger *slog.Logger) {
+// StartRecovery queries for stale PENDING messages older than recoveryStaleness
+// and re-processes each one in a goroutine. Runs once at startup.
+func StartRecovery(ctx context.Context, db *bun.DB, provider LLMProvider, m *metrics.Parser, logger *slog.Logger) {
 	var msgs []*model.Message
 	cutoff := time.Now().Add(-recoveryStaleness)
 
 	if err := db.NewSelect().
 		Model(&msgs).
 		Where("parse_status = ?", model.ParseStatusPending).
-		Where("retry_count > 0").
 		Where("created_at < ?", cutoff).
 		Scan(ctx); err != nil {
 		logger.Error("recovery: query failed", "error", err)
@@ -46,9 +46,9 @@ func StartRecovery(ctx context.Context, db *bun.DB, provider LLMProvider, logger
 	sem := make(chan struct{}, recoveryMaxConcurrent)
 	for _, msg := range msgs {
 		sem <- struct{}{}
-		go func(m *model.Message) {
+		go func(msg *model.Message) {
 			defer func() { <-sem }()
-			Process(ctx, m, db, provider, logger)
+			Process(ctx, msg, db, provider, m, logger)
 		}(msg)
 	}
 }

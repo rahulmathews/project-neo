@@ -37,11 +37,22 @@ func (w *MessageWriter) Write(
 	content string,
 	timestamp time.Time,
 ) (stored bool, err error) {
-	hash := model.ComputeContentHash(content)
+	normalizedContent := model.NormalizeMessageContent(content)
+	if normalizedContent == "" {
+		return false, nil
+	}
+
+	if timestamp.IsZero() {
+		timestamp = time.Now()
+	}
+	timestamp = timestamp.UTC()
+
+	hash := model.ComputeContentHash(normalizedContent)
 
 	// For messages with no WhatsApp message ID, check exact hash+timestamp match.
 	if sourceMessageID == nil {
-		exists, err := w.store.ExistsByHash(ctx, groupID, hash, timestamp)
+		var exists bool
+		exists, err = w.store.ExistsByHash(ctx, groupID, hash, timestamp)
 		if err != nil {
 			return false, err
 		}
@@ -50,19 +61,26 @@ func (w *MessageWriter) Write(
 		}
 	}
 
+	var groupSourceID *uuid.UUID
+	if sourceID != uuid.Nil {
+		groupSourceID = &sourceID
+	}
+
 	msg := &model.Message{
 		ID:               uuid.New(),
 		GroupID:          groupID,
+		GroupSourceID:    groupSourceID,
 		SourceMessageID:  sourceMessageID,
 		SenderIdentifier: senderIdentifier,
-		Content:          content,
+		Content:          normalizedContent,
 		ContentHash:      hash,
 		Timestamp:        timestamp,
 		ParseStatus:      model.ParseStatusPending,
 	}
 
-	if err := w.store.Insert(ctx, msg); err != nil {
+	inserted, err := w.store.Insert(ctx, msg)
+	if err != nil {
 		return false, err
 	}
-	return true, nil
+	return inserted, nil
 }

@@ -18,12 +18,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       - name: Cache Turborepo
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
@@ -31,7 +31,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'apps/graphql-api/go.mod'
           cache: true
@@ -42,7 +42,7 @@ jobs:
           bun-version: '1.3.11'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
@@ -64,8 +64,8 @@ jobs:
 
       - name: Install Go tools
         run: |
-          go install mvdan.cc/gofumpt@latest
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install mvdan.cc/gofumpt@v0.8.0
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 
       - name: Install Flutter dependencies
         working-directory: apps/mobile

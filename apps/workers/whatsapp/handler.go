@@ -86,7 +86,8 @@ func (h *Handler) process(ctx context.Context, evt *events.Message) {
 		evt.Info.Timestamp,
 	)
 	if err != nil {
-		h.logger.Error("failed to store message",
+		h.logger.Error(
+			"failed to store message",
 			"group_id", groupID,
 			"source_message_id", msgID,
 			"error", err,
@@ -95,7 +96,8 @@ func (h *Handler) process(ctx context.Context, evt *events.Message) {
 	}
 
 	if stored {
-		h.logger.Info("message stored",
+		h.logger.Info(
+			"message stored",
 			"group_id", groupID,
 			"source_message_id", msgID,
 		)

@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"project-neo/shared/repository"
@@ -14,30 +14,33 @@ import (
 // StartListener opens a persistent PostgreSQL LISTEN connection and fans out
 // NOTIFY events to the broker. Runs until ctx is cancelled.
 // Receives repository interfaces to avoid depending on concrete postgres types.
-func StartListener(ctx context.Context, dsn string, rides repository.RideRepository, matches repository.MatchRepository, broker *Broker) {
+func StartListener(
+	ctx context.Context,
+	logger *slog.Logger,
+	dsn string,
+	rides repository.RideRepository,
+	matches repository.MatchRepository,
+	broker *Broker,
+) {
 	listener := pq.NewListener(dsn, 10*time.Second, time.Minute, func(ev pq.ListenerEventType, err error) {
 		if err != nil {
-			log.Printf("listener event %d: %v", ev, err)
+			logger.Error("listener event", "event", ev, "error", err)
 		}
 	})
 
-	if err := listener.Listen("rides_added"); err != nil {
-		log.Printf("listen rides_added: %v", err)
-	}
-	if err := listener.Listen("rides_updated"); err != nil {
-		log.Printf("listen rides_updated: %v", err)
-	}
-	if err := listener.Listen("matches_updated"); err != nil {
-		log.Printf("listen matches_updated: %v", err)
+	for _, channel := range []string{"rides_added", "rides_updated", "matches_updated"} {
+		if err := listener.Listen(channel); err != nil {
+			logger.Error("listen channel", "channel", channel, "error", err)
+		}
 	}
 
-	log.Println("postgres listener started")
+	logger.Info("postgres listener started")
 
 	for {
 		select {
 		case <-ctx.Done():
 			if err := listener.Close(); err != nil {
-				log.Printf("close listener: %v", err)
+				logger.Error("close listener", "error", err)
 			}
 			return
 		case n := <-listener.Notify:
@@ -46,50 +49,50 @@ func StartListener(ctx context.Context, dsn string, rides repository.RideReposit
 			}
 			switch n.Channel {
 			case "rides_added":
-				handleRideAdded(ctx, n.Extra, rides, broker)
+				handleRideAdded(ctx, logger, n.Extra, rides, broker)
 			case "rides_updated":
-				handleRideUpdated(ctx, n.Extra, rides, broker)
+				handleRideUpdated(ctx, logger, n.Extra, rides, broker)
 			case "matches_updated":
-				handleMatchUpdated(ctx, n.Extra, matches, broker)
+				handleMatchUpdated(ctx, logger, n.Extra, matches, broker)
 			}
 		}
 	}
 }
 
-func handleRideAdded(ctx context.Context, idStr string, repo repository.RideRepository, broker *Broker) {
+func handleRideAdded(ctx context.Context, logger *slog.Logger, idStr string, repo repository.RideRepository, broker *Broker) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return
 	}
 	ride, err := repo.GetByID(ctx, id)
 	if err != nil {
-		log.Printf("listener: fetch ride %s: %v", idStr, err)
+		logger.Error("listener: fetch ride", "id", idStr, "error", err)
 		return
 	}
 	broker.PublishRideAdded(RideEvent{Ride: ride, GroupID: ride.GroupID.String()})
 }
 
-func handleRideUpdated(ctx context.Context, idStr string, repo repository.RideRepository, broker *Broker) {
+func handleRideUpdated(ctx context.Context, logger *slog.Logger, idStr string, repo repository.RideRepository, broker *Broker) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return
 	}
 	ride, err := repo.GetByID(ctx, id)
 	if err != nil {
-		log.Printf("listener: fetch ride %s: %v", idStr, err)
+		logger.Error("listener: fetch ride", "id", idStr, "error", err)
 		return
 	}
 	broker.PublishRideUpdated(RideEvent{Ride: ride, GroupID: ride.GroupID.String()})
 }
 
-func handleMatchUpdated(ctx context.Context, idStr string, repo repository.MatchRepository, broker *Broker) {
+func handleMatchUpdated(ctx context.Context, logger *slog.Logger, idStr string, repo repository.MatchRepository, broker *Broker) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return
 	}
 	match, err := repo.GetByID(ctx, id)
 	if err != nil {
-		log.Printf("listener: fetch match %s: %v", idStr, err)
+		logger.Error("listener: fetch match", "id", idStr, "error", err)
 		return
 	}
 	broker.PublishMatchUpdated(match)

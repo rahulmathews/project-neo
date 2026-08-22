@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.0.4](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.3...graphql-api-v0.0.4) (2026-08-22)
+
+
+### Features
+
+* Added Promethewus metrics ([abd3142](https://github.com/rahulmathews/project-neo/commit/abd31427ff0c29fc624a81370faf4b7a6a02c55c))
+* Added Promethewus metrics ([cfaeb31](https://github.com/rahulmathews/project-neo/commit/cfaeb31d8315dbd6ebc03a0f4f9d0cb4c2db03ae))
+* Added some more migrations for the deduplkications ([d6b83bf](https://github.com/rahulmathews/project-neo/commit/d6b83bf1ff83a01fdbcb0ed8bb4faab5b4882108))
+
+
+### Bug Fixes
+
+* **graphql-api:** regenerate gqlgen code for 0.17.94 ([86f3d67](https://github.com/rahulmathews/project-neo/commit/86f3d67b9d456818cb92e98343d919d198803a6b))
+
+## [0.0.3](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.2...graphql-api-v0.0.3) (2026-05-08)
+
+
+### Features
+
+* **graphql-api:** production hardening ([ac1727c](https://github.com/rahulmathews/project-neo/commit/ac1727c4268b8b00b4e089dd5473524e9cc3a34e))
+* **graphql-api:** production hardening ([edd0f8b](https://github.com/rahulmathews/project-neo/commit/edd0f8b0bc080c55f0281c6cd46251abebf57f36))
+
+## [0.0.2](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.1...graphql-api-v0.0.2) (2026-05-07)
+
+
+### Bug Fixes
+
+* **graphql-api:** keep read-only lookup queries unauthenticated ([8a0ceaa](https://github.com/rahulmathews/project-neo/commit/8a0ceaa57e76374051609672d7650fae785413db))
+* **graphql-api:** update websocket init callback ([c1d17fc](https://github.com/rahulmathews/project-neo/commit/c1d17fce8f904971c985983dabeef403ad07a801))
+* harden auth flows and correct message insert signaling ([90bac3e](https://github.com/rahulmathews/project-neo/commit/90bac3e701567f046c9942c2d3b05682cf0691e7))
+* harden graphql auth checks and message insert dedupe signaling ([66c4a2e](https://github.com/rahulmathews/project-neo/commit/66c4a2efd20b54f3d87789b8cf75856d3df8d3b4))
+* **shared:** harden auth and message dedupe handling ([d2a7dfe](https://github.com/rahulmathews/project-neo/commit/d2a7dfef81607fe93213dfe566c2fb1940e1d59e))
+* tighten auth checks and dedupe insert signaling ([32dded2](https://github.com/rahulmathews/project-neo/commit/32dded286c83242830482f6417076b5e514e4e13))
+
 ## 0.0.1 (2026-04-19)
 
 

@@ -11,7 +11,7 @@ if git diff --cached --name-only | grep -q '\.go$'; then
     module_dir=$(dirname "$gomod" | sed 's|^\./||')
     if git diff --cached --name-only | grep -q "^$module_dir/"; then
       echo "golangci-lint: $module_dir"
-      (cd "$module_dir" && golangci-lint run --fast --timeout 60s ./...)
+      (cd "$module_dir" && golangci-lint run --fast --timeout 1m ./...)
     fi
   done
 fi

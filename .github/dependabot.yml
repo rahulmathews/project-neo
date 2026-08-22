@@ -3,24 +3,24 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'daily'
 
   - package-ecosystem: 'gomod'
     directory: '/apps/graphql-api'
     schedule:
-      interval: 'weekly'
+      interval: 'daily'
 
   - package-ecosystem: 'gomod'
     directory: '/apps/workers'
     schedule:
-      interval: 'weekly'
+      interval: 'daily'
 
   - package-ecosystem: 'gomod'
     directory: '/packages/shared-go'
     schedule:
-      interval: 'weekly'
+      interval: 'daily'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: 'weekly'
+      interval: 'daily'
