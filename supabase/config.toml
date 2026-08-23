@@ -58,11 +58,12 @@ enabled = true
 schema_paths = []
 
 [db.seed]
-# If enabled, seeds the database after migrations during a db reset.
-enabled = true
+# Seeding is intentionally disabled: Project Neo has a no-seed-data rule.
+# All rows must originate from realtime ingestion (WhatsApp → workers → DB).
+enabled = false
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+sql_paths = []
 
 [db.network_restrictions]
 # Enable management of network restrictions.
@@ -361,7 +362,8 @@ enabled = true
 # `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
 policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
-inspector_port = 8083
+# 8683 (not the default 8083) — the workers service occupies 8083 on this host.
+inspector_port = 8683
 # The Deno major version to use.
 deno_version = 2
 

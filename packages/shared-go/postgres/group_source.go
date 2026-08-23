@@ -47,8 +47,11 @@ func (s *GroupSourceStore) UpdateLastParsedAt(ctx context.Context, id uuid.UUID,
 	return nil
 }
 
-// UpsertGroupSource inserts a group_source row, or updates group_id and is_active if the
-// (source_type, source_identifier) pair already exists.
+// UpsertGroupSource inserts a group_source row (active by default), or updates
+// group_id if the (source_type, source_identifier) pair already exists.
+// is_active is deliberately NOT touched on conflict: it is the operator's
+// kill-switch, and every reconnect used to silently flip disabled sources
+// back on.
 func (s *GroupSourceStore) UpsertGroupSource(ctx context.Context, groupID uuid.UUID, sourceType model.SourceType, sourceIdentifier string) (uuid.UUID, error) {
 	src := &model.GroupSource{
 		ID:               uuid.New(),
@@ -61,7 +64,6 @@ func (s *GroupSourceStore) UpsertGroupSource(ctx context.Context, groupID uuid.U
 		Model(src).
 		On("CONFLICT (source_type, source_identifier) DO UPDATE").
 		Set("group_id = EXCLUDED.group_id").
-		Set("is_active = true").
 		Set("updated_at = now()").
 		Returning("id").
 		Scan(ctx); err != nil {

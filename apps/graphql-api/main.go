@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,15 +11,19 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"project-neo/graphql-api/graph/generated"
 	"project-neo/graphql-api/graph/resolvers"
 	"project-neo/graphql-api/internal/auth"
+	"project-neo/graphql-api/internal/gqlerrors"
 	"project-neo/graphql-api/internal/httpx"
 	"project-neo/graphql-api/internal/metrics"
 	ipostgres "project-neo/graphql-api/internal/postgres"
+	"project-neo/shared/errtrack"
+	"project-neo/shared/logging"
 	"project-neo/shared/postgres"
 	"project-neo/shared/repository"
 
@@ -36,7 +41,7 @@ func main() {
 		os.Exit(runHealthcheck("http://localhost:8082/health"))
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := logging.New()
 	if err := run(logger); err != nil {
 		logger.Error("server error", "error", err)
 		os.Exit(1)
@@ -44,6 +49,9 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
+	flushErrTrack := errtrack.Init("graphql-api", logger)
+	defer flushErrTrack()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -52,10 +60,28 @@ func run(logger *slog.Logger) error {
 	if dsn == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
+	// Newer Supabase versions sign user access tokens with an asymmetric key
+	// published at <supabase>/auth/v1/.well-known/jwks.json; the shared secret
+	// only verifies legacy HS256 tokens. At least one path must be configured.
 	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
-	if jwtSecret == "" {
-		return fmt.Errorf("SUPABASE_JWT_SECRET is required")
+	jwksURL := os.Getenv("SUPABASE_JWKS_URL")
+	if jwtSecret == "" && jwksURL == "" {
+		return fmt.Errorf("SUPABASE_JWT_SECRET or SUPABASE_JWKS_URL is required")
 	}
+	// AUTH_EXPECTED_AUDIENCE distinguishes unset (default "authenticated")
+	// from explicitly empty (audience check disabled — needed when accepting
+	// legacy anon/service-role keys, which carry no aud claim).
+	audience := "authenticated"
+	if v, ok := os.LookupEnv("AUTH_EXPECTED_AUDIENCE"); ok {
+		audience = v
+	}
+	verifier := auth.NewVerifier(auth.Config{
+		Secret:     jwtSecret,
+		JWKSURL:    jwksURL,
+		Audience:   audience,
+		Issuer:     os.Getenv("AUTH_EXPECTED_ISSUER"),
+		AllowHS256: strings.EqualFold(os.Getenv("AUTH_ALLOW_HS256"), "true"),
+	}, logger)
 	isProd := strings.EqualFold(os.Getenv("ENV"), "production")
 	cfg := loadHTTPConfig()
 
@@ -69,18 +95,18 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
-	broker := ipostgres.NewBroker()
+	reg := metrics.NewRegistry()
+	httpMetrics := metrics.New(reg)
+	broker := ipostgres.NewBroker(logger, metrics.NewSubscriptions(reg))
 
 	rideRepo := postgres.NewRideRepository(db)
 	matchRepo := postgres.NewMatchRepository(db)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker)
-
-	reg := metrics.NewRegistry()
-	httpMetrics := metrics.New(reg)
-	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), jwtSecret, cfg, isProd, logger, httpMetrics, reg)
+	health := newRuntimeHealth()
+	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker, health.listenerUp, health.listenerDown)
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg, health)
 
 	httpSrv := &http.Server{
 		Addr:              ":" + port,
@@ -110,10 +136,15 @@ func buildResolver(
 	}
 }
 
-func buildGraphQLServer(resolver *resolvers.Resolver, jwtSecret string, isProd bool) *handler.Server {
+func buildGraphQLServer(resolver *resolvers.Resolver, verifier *auth.Verifier, isProd bool, logger *slog.Logger) *handler.Server {
 	gqlSrv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: resolver,
 	}))
+	gqlSrv.SetErrorPresenter(gqlerrors.Presenter(logger))
+	gqlSrv.SetRecoverFunc(gqlerrors.RecoverFunc(logger))
+	if limit := complexityLimit(); limit > 0 {
+		gqlSrv.Use(extension.FixedComplexityLimit(limit))
+	}
 	if !isProd {
 		gqlSrv.Use(extension.Introspection{})
 	}
@@ -123,21 +154,22 @@ func buildGraphQLServer(resolver *resolvers.Resolver, jwtSecret string, isProd b
 	gqlSrv.AddTransport(transport.MultipartForm{})
 	gqlSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
-		InitFunc:              websocketInitFunc(jwtSecret),
+		InitFunc:              websocketInitFunc(verifier),
 	})
 	return gqlSrv
 }
 
 func buildRootHandler(
 	resolver *resolvers.Resolver,
-	jwtSecret string,
+	verifier *auth.Verifier,
 	cfg httpConfig,
 	isProd bool,
 	logger *slog.Logger,
 	httpMetrics *metrics.HTTP,
 	reg *prometheus.Registry,
+	health *runtimeHealth,
 ) http.Handler {
-	gqlSrv := buildGraphQLServer(resolver, jwtSecret, isProd)
+	gqlSrv := buildGraphQLServer(resolver, verifier, isProd, logger)
 	mux := http.NewServeMux()
 	if isProd {
 		mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -149,18 +181,32 @@ func buildRootHandler(
 	mux.Handle("/query", httpx.Chain(
 		gqlSrv,
 		httpx.Metrics(httpMetrics, "/query"),
-		auth.Middleware(jwtSecret),
+		verifier.Middleware(),
 		httpx.RateLimit(cfg.rateLimitRPS, cfg.rateLimitBurst),
 		httpx.BodyLimit(cfg.maxBodyBytes),
 	))
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprintf(w, `{"status":"ok","service":"graphql-api"}`)
+		up, reason := health.snapshot()
+		body := map[string]string{"status": "ok", "service": "graphql-api", "listener": "ok"}
+		if !up {
+			// A dead pg listener means every GraphQL subscription is silently
+			// frozen — surface it as unhealthy so Docker notices.
+			w.WriteHeader(http.StatusServiceUnavailable)
+			body["status"] = "degraded"
+			body["listener"] = reason
+		}
+		_ = json.NewEncoder(w).Encode(body)
 	})
-	mux.Handle("/metrics", metrics.Handler(reg))
+	// Prometheus metrics stay off the public surface in production unless
+	// explicitly opted in — the endpoint sits outside the auth/rate-limit chain.
+	if !isProd || strings.EqualFold(os.Getenv("METRICS_PUBLIC"), "true") {
+		mux.Handle("/metrics", metrics.Handler(reg))
+	}
 	return httpx.Chain(
 		mux,
 		httpx.Recover(logger),
+		httpx.RequestID(),
 		httpx.RequestLog(logger, "/health", "/metrics"),
 		httpx.CORS(cfg.allowedOrigins),
 	)
@@ -196,7 +242,7 @@ func serveAndWait(ctx context.Context, srv *http.Server, logger *slog.Logger) er
 	return nil
 }
 
-func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
+func websocketInitFunc(verifier *auth.Verifier) transport.WebsocketInitFunc {
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, *transport.InitPayload, error) {
 		token := ""
 		for _, key := range []string{"Authorization", "authorization"} {
@@ -214,7 +260,7 @@ func websocketInitFunc(jwtSecret string) transport.WebsocketInitFunc {
 			}
 		}
 		if token != "" {
-			ctx = auth.ContextWithToken(ctx, token, jwtSecret)
+			ctx = verifier.ContextWithToken(ctx, token)
 		}
 		return ctx, nil, nil
 	}
@@ -225,6 +271,56 @@ type httpConfig struct {
 	maxBodyBytes   int64
 	rateLimitRPS   int
 	rateLimitBurst int
+}
+
+// runtimeHealth tracks the pg listener state feeding /health. Callbacks are
+// invoked from pq's internal goroutines, hence the mutex.
+type runtimeHealth struct {
+	mu          sync.RWMutex
+	listenerOK  bool
+	listenerErr string
+}
+
+func newRuntimeHealth() *runtimeHealth {
+	return &runtimeHealth{listenerErr: "starting"}
+}
+
+func (h *runtimeHealth) listenerUp() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.listenerOK = true
+	h.listenerErr = ""
+}
+
+func (h *runtimeHealth) listenerDown(err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.listenerOK = false
+	if err != nil {
+		h.listenerErr = err.Error()
+	} else {
+		h.listenerErr = "down"
+	}
+}
+
+func (h *runtimeHealth) snapshot() (bool, string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.listenerOK, h.listenerErr
+}
+
+// complexityLimit reads GRAPHQL_COMPLEXITY_LIMIT (default 300; 0 disables).
+// Caps damage from deeply nested queries until dataloaders land.
+func complexityLimit() int {
+	v := os.Getenv("GRAPHQL_COMPLEXITY_LIMIT")
+	if v == "" {
+		return 300
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 300
+	}
+	return n
 }
 
 func loadHTTPConfig() httpConfig {

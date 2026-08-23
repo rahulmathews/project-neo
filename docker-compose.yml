@@ -10,12 +10,29 @@ services:
       - "8083:8083"
     environment:
       - DATABASE_URL=${DATABASE_URL}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434/v1}
+      # host.docker.internal, not localhost — localhost inside the container
+      # is the container itself, so the host's Ollama would be unreachable.
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:3b}
       - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
+      - OLLAMA_ENABLED=${OLLAMA_ENABLED:-true}
       - WHATSAPP_SESSION_PATH=/data/whatsapp.db
+      - WHATSAPP_ENABLED=${WHATSAPP_ENABLED:-true}
+      - WHATSAPP_GROUP_SYNC_INTERVAL=${WHATSAPP_GROUP_SYNC_INTERVAL:-10m}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-text}
+      - SENTRY_DSN=${SENTRY_DSN_WORKERS:-}
+      - PARSER_TIMEZONE=${PARSER_TIMEZONE:-}
+      - PARSER_MAX_CONCURRENT=${PARSER_MAX_CONCURRENT:-8}
+      - PARSER_RECOVERY_INTERVAL=${PARSER_RECOVERY_INTERVAL:-5m}
+      - RIDE_EXPIRY_SWEEP_INTERVAL=${RIDE_EXPIRY_SWEEP_INTERVAL:-5m}
+      - RIDE_EXPIRY_IMMEDIATE_MIN=${RIDE_EXPIRY_IMMEDIATE_MIN:-60}
+      - RIDE_EXPIRY_DEPARTED_GRACE_MIN=${RIDE_EXPIRY_DEPARTED_GRACE_MIN:-30}
+      - RIDE_EXPIRY_UNDATED_HOURS=${RIDE_EXPIRY_UNDATED_HOURS:-24}
     volumes:
       - whatsapp-session:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - neo-network
     restart: unless-stopped
@@ -36,7 +53,24 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL:-}
       - PORT=8082
+      - ENV=${ENV:-development}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
+      - MAX_BODY_BYTES=${MAX_BODY_BYTES:-1048576}
+      - RATE_LIMIT_RPS=${RATE_LIMIT_RPS:-50}
+      - RATE_LIMIT_BURST=${RATE_LIMIT_BURST:-100}
+      - AUTH_ALLOW_HS256=${AUTH_ALLOW_HS256:-false}
+      # ${VAR-default} (no colon) on purpose: an explicitly-empty value in
+      # .env must pass through to disable the audience check.
+      - AUTH_EXPECTED_AUDIENCE=${AUTH_EXPECTED_AUDIENCE-authenticated}
+      - AUTH_EXPECTED_ISSUER=${AUTH_EXPECTED_ISSUER:-}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-text}
+      - SENTRY_DSN=${SENTRY_DSN_GRAPHQL_API:-}
+      - GRAPHQL_COMPLEXITY_LIMIT=${GRAPHQL_COMPLEXITY_LIMIT:-300}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - neo-network
     restart: unless-stopped

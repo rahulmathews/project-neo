@@ -9,7 +9,7 @@ help: ## Show this help message
 install-tools: ## Install Go development tools (run once after cloning)
 	@echo "Installing Go tools..."
 	@go install mvdan.cc/gofumpt@latest
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
 	@go install github.com/air-verse/air@latest
 	@go install golang.org/x/tools/cmd/goimports@latest
 	@echo "✓ Go tools installed"

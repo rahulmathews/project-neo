@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../core/graphql/client.dart';
 import '../../../core/widgets/error_view.dart';
@@ -216,7 +219,10 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
 
 void _throwIfGraphQLError(QueryResult<Object?> result) {
   if (result.hasException) {
-    throw Exception(result.exception.toString());
+    final exception = result.exception!;
+    // No-op unless Sentry was initialized with a DSN (see main.dart).
+    unawaited(Sentry.captureException(exception));
+    throw Exception(exception.toString());
   }
 }
 

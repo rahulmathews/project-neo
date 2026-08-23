@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"project-neo/shared/model"
@@ -22,6 +24,9 @@ func NewLocationRepository(db *bun.DB) repository.LocationRepository {
 func (r *locationRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Location, error) {
 	loc := new(model.Location)
 	err := r.db.NewSelect().Model(loc).Where("loc.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get location: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get location: %w", err)
 	}

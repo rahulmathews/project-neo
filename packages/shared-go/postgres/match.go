@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -23,6 +25,9 @@ func NewMatchRepository(db *bun.DB) repository.MatchRepository {
 func (r *matchRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Match, error) {
 	match := new(model.Match)
 	err := r.db.NewSelect().Model(match).Where("m.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get match: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get match: %w", err)
 	}

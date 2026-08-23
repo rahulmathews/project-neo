@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	// Embed the IANA timezone database: the distroless runtime image has no
+	// /usr/share/zoneinfo, so PARSER_TIMEZONE would never resolve without it.
+	_ "time/tzdata"
 )
 
 func main() {

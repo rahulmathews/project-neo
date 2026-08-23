@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"project-neo/shared/model"
@@ -22,6 +24,9 @@ func NewUserRepository(db *bun.DB) repository.UserRepository {
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	user := new(model.User)
 	err := r.db.NewSelect().Model(user).Where("u.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get user: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
