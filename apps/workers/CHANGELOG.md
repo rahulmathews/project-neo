@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.0.7](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.6...workers-v0.0.7) (2026-08-23)
+
+
+### Features
+
+* **workers:** adopt shared leveled logger ([3ee0043](https://github.com/rahulmathews/project-neo/commit/3ee00431152d9e3381d72a270d95d25a5e033859))
+* **workers:** expire stale rides on a sweep ticker ([abf5b53](https://github.com/rahulmathews/project-neo/commit/abf5b530342ed8104b23c34278258ae30f632d09))
+* **workers:** fail fast when LLM provider is unavailable or disabled ([955435f](https://github.com/rahulmathews/project-neo/commit/955435fb4d09944002745d8ce855577a27181ca7))
+* **workers:** honor is_active and resync whatsapp groups ([c12c918](https://github.com/rahulmathews/project-neo/commit/c12c918ee1cd225fb2db32ab29412350a8d1cc5e))
+* **workers:** report panics and pipeline failures to sentry ([2867fbd](https://github.com/rahulmathews/project-neo/commit/2867fbd094ecd56f5592cb1b0724a4577c8a8058))
+* **workers:** supervised connector bootstrap with endless QR pairing ([4513f5d](https://github.com/rahulmathews/project-neo/commit/4513f5dca82ccf3986a0455dab7cc6606109bb7c))
+* **workers:** sweep stale pending messages on a periodic ticker ([c5c7a64](https://github.com/rahulmathews/project-neo/commit/c5c7a647853fb26bafbe8552f6e50ecbb2233ec9))
+* **workers:** wire connector supervisor into run loop ([256912e](https://github.com/rahulmathews/project-neo/commit/256912eca6e1af6ce879d61ae82a302384d50a5d))
+
+
+### Bug Fixes
+
+* **deps:** bump whatsmeow so WhatsApp accepts the client again ([cb89584](https://github.com/rahulmathews/project-neo/commit/cb89584b28bbf67a0a39c5ababbbb0cc563c8354))
+* **workers:** cap concurrent parse goroutines ([6808e9e](https://github.com/rahulmathews/project-neo/commit/6808e9efb395e8fbfe539fef66f04a2cf4cd51c2))
+* **workers:** parse clock times in configurable timezone ([3a74abc](https://github.com/rahulmathews/project-neo/commit/3a74abc4397990d6cb112c80c0592aabe59e98dc))
+* **workers:** preserve status writes and retries across shutdown ([6bf3aee](https://github.com/rahulmathews/project-neo/commit/6bf3aee56001ee9f6ea10f7bc27eb4fa0d0e5f07))
+* **workers:** recover from parser panics ([f1c613c](https://github.com/rahulmathews/project-neo/commit/f1c613c54706986defa65753418d459e03a5a134))
+* **workers:** report accurate parse_error in regex-only mode ([cc6ff84](https://github.com/rahulmathews/project-neo/commit/cc6ff84f029087706c42bb549ef68c274f6e2d8b))
+
 ## [0.0.6](https://github.com/rahulmathews/project-neo/compare/workers-v0.0.5...workers-v0.0.6) (2026-08-22)
 
 

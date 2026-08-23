@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.4](https://github.com/rahulmathews/project-neo/compare/mobile-v0.0.3...mobile-v0.0.4) (2026-08-23)
+
+
+### Features
+
+* **mobile:** land on rides feed after login ([761c583](https://github.com/rahulmathews/project-neo/commit/761c583b6584517c635d6a5401ff04048b140b2f))
+* **mobile:** optional sentry crash reporting ([5a4c46d](https://github.com/rahulmathews/project-neo/commit/5a4c46dc718a636f3bdfeefd44c8a2aaf3388d91))
+* **mobile:** sync profile via upsertUser after sign-in ([0ae77cf](https://github.com/rahulmathews/project-neo/commit/0ae77cf8817bb68cf279698ffb42701844e30755))
+
+
+### Bug Fixes
+
+* **mobile:** allow cleartext in debug and add INTERNET to main manifest ([1ab29a0](https://github.com/rahulmathews/project-neo/commit/1ab29a0c45a36be3a31667f50ef6c636299ef8c9))
+* **mobile:** use bundled Inter weights for headings ([31388b9](https://github.com/rahulmathews/project-neo/commit/31388b9445bb013f99b57110af5a56b951183988))
+
 ## [0.0.3](https://github.com/rahulmathews/project-neo/compare/mobile-v0.0.2...mobile-v0.0.3) (2026-08-22)
 
 

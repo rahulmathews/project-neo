@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.5](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.4...graphql-api-v0.0.5) (2026-08-23)
+
+
+### Features
+
+* **graphql-api:** adopt shared leveled logger ([d341a30](https://github.com/rahulmathews/project-neo/commit/d341a3056e844188729012df663c50c948470070))
+* **graphql-api:** error presenter, recover func, complexity limit ([e5cdaad](https://github.com/rahulmathews/project-neo/commit/e5cdaad98279dbce6c4cdec72b79f9bf97936908))
+* **graphql-api:** report internal errors and panics to sentry ([99cc65e](https://github.com/rahulmathews/project-neo/commit/99cc65e522e2f69a5572491d736604db95ab14f4))
+* **graphql-api:** request-id middleware and log correlation ([3efe31f](https://github.com/rahulmathews/project-neo/commit/3efe31f81619baa306df86f5ead10f3a0698c36c))
+* **graphql-api:** validate JWT method, audience and expiry; reject HS256 when JWKS is configured ([9d3770e](https://github.com/rahulmathews/project-neo/commit/9d3770e1fb161c05e6a1c9bd729812bbc87e4d29))
+
+
+### Bug Fixes
+
+* **graphql-api:** count and log dropped subscription events ([fb6e36f](https://github.com/rahulmathews/project-neo/commit/fb6e36f26d5515cc810c782001ff8e86bc3d8391))
+* **graphql-api:** drop credentials on wildcard CORS, gate metrics ([e4bf3db](https://github.com/rahulmathews/project-neo/commit/e4bf3dbadc78d14d651f173bb5ff3cb798b10e97))
+* **graphql-api:** make JWKS cache concurrent-safe and failure-tolerant ([af0fb9f](https://github.com/rahulmathews/project-neo/commit/af0fb9f7cf32232cd61fd6dd84e3f9c3cc9139dd))
+* **graphql-api:** supervise pg listener and reflect it in health ([c1681d6](https://github.com/rahulmathews/project-neo/commit/c1681d6fe0b96f95b4a428d6dcd77b68414d5c40))
+* **shared:** map missing rows to typed sentinel errors ([616ef86](https://github.com/rahulmathews/project-neo/commit/616ef8649953ebe482eb1b95fe661cd5c91bd8de))
+
 ## [0.0.4](https://github.com/rahulmathews/project-neo/compare/graphql-api-v0.0.3...graphql-api-v0.0.4) (2026-08-22)
 
 
