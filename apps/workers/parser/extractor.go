@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"project-neo/shared/errtrack"
 	"project-neo/shared/model"
 	"project-neo/workers/internal/metrics"
 
@@ -44,14 +45,25 @@ func Process(ctx context.Context, msg *model.Message, db *bun.DB, provider LLMPr
 
 		// Step 3: write ride
 		if err := writeRide(ctx, db, msg, parsed, fromID, toID, m, logger); err != nil {
+			if ctx.Err() != nil {
+				return // shutdown mid-write — row stays PENDING for recovery
+			}
 			logger.Warn("parser: write ride failed", "msg_id", msg.ID, "attempt", attempt, "error", err)
 			incrementRetryCount(ctx, db, msg.ID, err.Error(), logger)
 			if attempt < maxRetries {
 				m.Retries.Inc()
-				sleep(ctx, backoff)
+				if !sleep(ctx, backoff) {
+					return
+				}
 				backoff *= backoffFactor
 				continue
 			}
+			// A ride-write failure is an infrastructure fault, unlike the
+			// expected regex-miss failures — report it.
+			errtrack.CaptureErr(err, map[string]string{
+				"component": "parser_writer",
+				"msg_id":    msg.ID.String(),
+			})
 			markFailed(ctx, db, msg.ID, err.Error(), m, logger)
 			return
 		}
@@ -93,6 +105,11 @@ func extract(
 	var err error
 	parsed, err = provider.Extract(ctx, msg.Content, groupName)
 	m.ExtractDuration.WithLabelValues("llm").Observe(time.Since(llmStart).Seconds())
+	if ctx.Err() != nil {
+		// Shutdown mid-extraction: a cancelled LLM call must not be recorded
+		// as an outage or failure — leave the row PENDING for recovery.
+		return nil, true
+	}
 	if err == nil {
 		m.Extractor.WithLabelValues("llm", "success").Inc()
 		return parsed, false
@@ -105,12 +122,34 @@ func extract(
 		return nil, true
 	}
 
+	if errors.Is(err, ErrLLMDisabled) {
+		// Regex-only mode: a miss here is a real parse failure to review, not an
+		// outage. The parse_error must point at the pattern gap, not at Ollama.
+		m.Extractor.WithLabelValues("llm", "disabled").Inc()
+		logger.Info("parser: no regex pattern matched (regex-only mode)", "msg_id", msg.ID)
+		markFailed(ctx, db, msg.ID, "no regex pattern matched (regex-only mode)", m, logger)
+		return nil, true
+	}
+
+	if errors.Is(err, ErrLLMUnavailable) {
+		// Retrying cannot help while the provider is down or disabled — fail
+		// fast with a clear parse_error instead of burning the retry budget.
+		m.Extractor.WithLabelValues("llm", "unavailable").Inc()
+		logger.Warn("parser: llm unavailable, failing fast", "msg_id", msg.ID, "error", err)
+		markFailed(ctx, db, msg.ID,
+			"llm unavailable — start Ollama or set OLLAMA_ENABLED=false ("+err.Error()+")",
+			m, logger)
+		return nil, true
+	}
+
 	m.Extractor.WithLabelValues("llm", "error").Inc()
 	logger.Warn("parser: extraction failed", "msg_id", msg.ID, "attempt", attempt, "error", err)
 	incrementRetryCount(ctx, db, msg.ID, err.Error(), logger)
 
 	if attempt < maxRetries {
-		sleep(ctx, *backoff)
+		if !sleep(ctx, *backoff) {
+			return nil, true
+		}
 		*backoff *= backoffFactor
 		return nil, false
 	}
@@ -119,11 +158,15 @@ func extract(
 	return nil, true
 }
 
-// sleep blocks for d or until ctx is cancelled.
-func sleep(ctx context.Context, d time.Duration) {
+// sleep blocks for d or until ctx is cancelled; reports whether the full
+// backoff elapsed. A false return means shutdown — callers must bail out and
+// leave the row PENDING for the recovery sweep instead of burning attempts.
+func sleep(ctx context.Context, d time.Duration) bool {
 	select {
 	case <-ctx.Done():
+		return false
 	case <-time.After(d):
+		return true
 	}
 }
 

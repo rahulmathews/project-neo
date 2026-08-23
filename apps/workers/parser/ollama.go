@@ -3,8 +3,12 @@ package parser
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/url"
+	"time"
 
 	"project-neo/shared/model"
 
@@ -41,8 +45,23 @@ func newOllamaProvider(baseURL, llmModel, apiKey string, logger *slog.Logger) *O
 	client := openai.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey(apiKey),
+		option.WithRequestTimeout(30*time.Second),
 	)
 	return &OllamaProvider{client: client, model: llmModel, logger: logger}
+}
+
+// classifyTransportErr wraps transport-level failures (dial refused, DNS,
+// timeouts — i.e. no HTTP response was received) in ErrLLMUnavailable so the
+// extractor can fail fast instead of retrying an endpoint that is not there.
+// Errors where the server responded (bad status, malformed body) pass through
+// unchanged and stay retryable.
+func classifyTransportErr(err error) error {
+	var urlErr *url.Error
+	var netErr net.Error
+	if errors.As(err, &urlErr) || errors.As(err, &netErr) || errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("%w: %w", ErrLLMUnavailable, err)
+	}
+	return err
 }
 
 // buildSystemPrompt constructs the extraction prompt with group context.
@@ -84,7 +103,7 @@ func (p *OllamaProvider) Extract(ctx context.Context, content, groupName string)
 		MaxTokens: param.NewOpt[int64](512),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("ollama api: %w", err)
+		return nil, fmt.Errorf("ollama api: %w", classifyTransportErr(err))
 	}
 
 	if len(resp.Choices) == 0 {

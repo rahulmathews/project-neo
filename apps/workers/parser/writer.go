@@ -66,8 +66,16 @@ func writeRide(
 	return nil
 }
 
+// writeCtx detaches from cancellation so terminal status writes land even
+// when a shutdown cancels the pipeline context, while still bounding the call.
+func writeCtx(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+}
+
 // linkMessageToRide sets messages.ride_id linking this message to its canonical ride.
 func linkMessageToRide(ctx context.Context, db *bun.DB, msgID, rideID uuid.UUID) error {
+	ctx, cancel := writeCtx(ctx)
+	defer cancel()
 	_, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("ride_id = ?", rideID).
@@ -77,6 +85,8 @@ func linkMessageToRide(ctx context.Context, db *bun.DB, msgID, rideID uuid.UUID)
 }
 
 func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, logger *slog.Logger) {
+	ctx, cancel := writeCtx(ctx)
+	defer cancel()
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("retry_count = retry_count + 1").
@@ -88,6 +98,8 @@ func incrementRetryCount(ctx context.Context, db *bun.DB, msgID uuid.UUID, reaso
 }
 
 func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, m *metrics.Parser, logger *slog.Logger) {
+	ctx, cancel := writeCtx(ctx)
+	defer cancel()
 	now := time.Now()
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
@@ -102,6 +114,8 @@ func markSuccess(ctx context.Context, db *bun.DB, msgID uuid.UUID, m *metrics.Pa
 }
 
 func markFailed(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string, m *metrics.Parser, logger *slog.Logger) {
+	ctx, cancel := writeCtx(ctx)
+	defer cancel()
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("parse_status = ?", model.ParseStatusFailed).
@@ -115,6 +129,8 @@ func markFailed(ctx context.Context, db *bun.DB, msgID uuid.UUID, reason string,
 }
 
 func markSkipped(ctx context.Context, db *bun.DB, msgID uuid.UUID, m *metrics.Parser, logger *slog.Logger) {
+	ctx, cancel := writeCtx(ctx)
+	defer cancel()
 	if _, err := db.NewUpdate().
 		TableExpr("messages").
 		Set("parse_status = ?", model.ParseStatusSkipped).

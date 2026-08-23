@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"project-neo/shared/model"
@@ -31,6 +33,9 @@ func (r *groupRepository) List(ctx context.Context) ([]*model.Group, error) {
 func (r *groupRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Group, error) {
 	group := new(model.Group)
 	err := r.db.NewSelect().Model(group).Where("g.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get group: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get group: %w", err)
 	}
@@ -63,6 +68,9 @@ func (r *groupRepository) ListLocationContexts(ctx context.Context, groupID uuid
 func (r *groupRepository) GetLocationContextByID(ctx context.Context, id uuid.UUID) (*model.LocationContext, error) {
 	lc := new(model.LocationContext)
 	err := r.db.NewSelect().Model(lc).Where("lc.id = ?", id).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get location context: %w", repository.ErrNotFound)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get location context: %w", err)
 	}

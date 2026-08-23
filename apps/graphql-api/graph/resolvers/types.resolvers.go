@@ -27,7 +27,7 @@ func (r *locationContextResolver) Location(ctx context.Context, obj *sharedmodel
 	if obj.LocationID == nil {
 		return nil, nil
 	}
-	return r.Resolver.Locations.GetByID(ctx, *obj.LocationID)
+	return nilIfNotFound(r.Resolver.Locations.GetByID(ctx, *obj.LocationID))
 }
 
 // Ride is the resolver for the ride field.
@@ -55,7 +55,7 @@ func (r *rideResolver) FromLocationContext(ctx context.Context, obj *sharedmodel
 	if obj.FromLocationID == nil {
 		return nil, nil
 	}
-	return r.Resolver.Groups.GetLocationContextByID(ctx, *obj.FromLocationID)
+	return nilIfNotFound(r.Resolver.Groups.GetLocationContextByID(ctx, *obj.FromLocationID))
 }
 
 // ToLocationContext is the resolver for the toLocationContext field.
@@ -63,7 +63,7 @@ func (r *rideResolver) ToLocationContext(ctx context.Context, obj *sharedmodel.R
 	if obj.ToLocationID == nil {
 		return nil, nil
 	}
-	return r.Resolver.Groups.GetLocationContextByID(ctx, *obj.ToLocationID)
+	return nilIfNotFound(r.Resolver.Groups.GetLocationContextByID(ctx, *obj.ToLocationID))
 }
 
 // PostedBy is the resolver for the postedBy field.
@@ -71,7 +71,7 @@ func (r *rideResolver) PostedBy(ctx context.Context, obj *sharedmodel.Ride) (*sh
 	if obj.PosterUserID == nil {
 		return nil, nil
 	}
-	return r.Resolver.Users.GetByID(ctx, *obj.PosterUserID)
+	return nilIfNotFound(r.Resolver.Users.GetByID(ctx, *obj.PosterUserID))
 }
 
 // Group returns generated.GroupResolver implementation.

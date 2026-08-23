@@ -13,9 +13,12 @@ import (
 	"syscall"
 	"time"
 
+	"project-neo/shared/errtrack"
+	"project-neo/shared/logging"
 	sharedpostgres "project-neo/shared/postgres"
 	workersinternal "project-neo/workers/internal"
 	"project-neo/workers/internal/metrics"
+	"project-neo/workers/internal/sweeper"
 	"project-neo/workers/parser"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,7 +26,9 @@ import (
 )
 
 func run() error {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := logging.New()
+	flushErrTrack := errtrack.Init("workers", logger)
+	defer flushErrTrack()
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
@@ -43,31 +48,35 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	connectors, err := buildConnectors(ctx, bunDB, logger)
-	if err != nil {
-		return fmt.Errorf("build connectors: %w", err)
-	}
-
+	// Order matters: the health endpoint must be reachable before anything
+	// that can take long (or wait indefinitely, like WhatsApp QR pairing).
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8083"
 	}
 	reg := metrics.NewRegistry()
-	httpMetrics, parserMetrics := metrics.New(reg)
+	httpMetrics, parserMetrics, sweeperMetrics := metrics.New(reg)
 	health := newRuntimeHealth()
 	srv := startHealthServer(port, logger, reg, httpMetrics, health)
 
+	parser.ConfigureTimezone(logger)
 	provider := parser.NewLLMProvider(logger)
 	go parser.StartRecovery(ctx, bunDB, provider, parserMetrics, logger)
+	go sweeper.Start(ctx, bunDB, sweeperMetrics, logger)
 	fatalErr := make(chan error, 1)
 	go func() {
 		if err := parser.StartListener(ctx, databaseURL, bunDB, provider, parserMetrics, logger, health.markParserReady); err != nil {
 			health.markParserFailed(err)
+			errtrack.CaptureErr(err, map[string]string{"component": "parser_listener"})
 			fatalErr <- err
 		}
 	}()
 
-	return waitForShutdown(cancel, connectors, srv, fatalErr, logger)
+	// Connectors last, supervised: connection failures and pending QR pairing
+	// must never crash the service — the parser pipeline works regardless.
+	sup := workersinternal.StartConnectorSupervisor(ctx, bunDB, logger, health.setConnector)
+
+	return waitForShutdown(cancel, sup, srv, fatalErr, logger)
 }
 
 func initDB(databaseURL string) (*bun.DB, error) {
@@ -78,36 +87,28 @@ func initDB(databaseURL string) (*bun.DB, error) {
 	return bunDB, nil
 }
 
-func buildConnectors(ctx context.Context, bunDB *bun.DB, logger *slog.Logger) ([]workersinternal.Connector, error) {
-	connectors, err := workersinternal.NewConnectors(ctx, bunDB, logger)
-	if err != nil {
-		return nil, fmt.Errorf("new connectors: %w", err)
-	}
-	for _, c := range connectors {
-		if err := c.Start(ctx); err != nil {
-			return nil, fmt.Errorf("start connector: %w", err)
-		}
-	}
-	return connectors, nil
-}
-
 func startHealthServer(port string, logger *slog.Logger, reg *prometheus.Registry, httpMetrics *metrics.HTTP, health *runtimeHealth) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle("/health", instrumentHTTP(httpMetrics, "/health", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if ok, reason := health.snapshot(); !ok {
+		parserOK, parserReason, connectors := health.snapshot()
+		status := "ok"
+		if !parserOK {
+			// The parser listener is the service's core — its failure is a
+			// real fault and makes the container unhealthy.
 			w.WriteHeader(http.StatusServiceUnavailable)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":          "degraded",
-				"service":         "workers",
-				"parser_listener": reason,
-			})
-			return
+			status = "degraded"
+		} else if anyConnectorDown(connectors) {
+			// Connector pairing is an operator step, not a fault: report
+			// degraded but stay 200 so `docker compose up` is green on a
+			// fresh machine while the QR waits in the logs.
+			status = "degraded"
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"status":          "ok",
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":          status,
 			"service":         "workers",
-			"parser_listener": "ok",
+			"parser_listener": parserReason,
+			"connectors":      connectors,
 		})
 	})))
 	mux.Handle("/metrics", metrics.Handler(reg))
@@ -128,14 +129,26 @@ func startHealthServer(port string, logger *slog.Logger, reg *prometheus.Registr
 	return srv
 }
 
+// anyConnectorDown reports whether an enabled connector is not connected.
+// "disabled" is operator intent, not degradation.
+func anyConnectorDown(connectors map[string]string) bool {
+	for _, status := range connectors {
+		if status != "connected" && status != "disabled" {
+			return true
+		}
+	}
+	return false
+}
+
 type runtimeHealth struct {
 	mu          sync.RWMutex
 	parserReady bool
 	parserErr   string
+	connectors  map[string]string
 }
 
 func newRuntimeHealth() *runtimeHealth {
-	return &runtimeHealth{}
+	return &runtimeHealth{connectors: map[string]string{}}
 }
 
 func (h *runtimeHealth) markParserReady() {
@@ -152,16 +165,26 @@ func (h *runtimeHealth) markParserFailed(err error) {
 	h.parserErr = err.Error()
 }
 
-func (h *runtimeHealth) snapshot() (bool, string) {
+func (h *runtimeHealth) setConnector(name, status string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.connectors[name] = status
+}
+
+func (h *runtimeHealth) snapshot() (parserOK bool, parserReason string, connectors map[string]string) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+	connectors = make(map[string]string, len(h.connectors))
+	for name, status := range h.connectors {
+		connectors[name] = status
+	}
 	if h.parserErr != "" {
-		return false, h.parserErr
+		return false, h.parserErr, connectors
 	}
 	if !h.parserReady {
-		return false, "starting"
+		return false, "starting", connectors
 	}
-	return true, "ok"
+	return true, "ok", connectors
 }
 
 type statusRecorder struct {
@@ -190,7 +213,7 @@ func instrumentHTTP(m *metrics.HTTP, route string, next http.Handler) http.Handl
 
 func waitForShutdown(
 	cancel context.CancelFunc,
-	connectors []workersinternal.Connector,
+	sup *workersinternal.Supervisor,
 	srv *http.Server,
 	fatalErr <-chan error,
 	logger *slog.Logger,
@@ -209,9 +232,7 @@ func waitForShutdown(
 
 	cancel()
 
-	for _, c := range connectors {
-		c.Stop()
-	}
+	sup.Stop()
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()

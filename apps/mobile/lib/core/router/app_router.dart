@@ -42,7 +42,7 @@ GoRouter appRouter(Ref ref) {
   ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/rides',
     refreshListenable: GoRouterRefreshStream(
       Supabase.instance.client.auth.onAuthStateChange,
     ),
@@ -53,7 +53,8 @@ GoRouter appRouter(Ref ref) {
       final isOnAuthRoute = loc == '/login' || loc == '/signup';
 
       if (!isAuthenticated && !isOnAuthRoute) return '/login';
-      if (isAuthenticated && isOnAuthRoute) return '/home';
+      // Land on the rides feed — the home dashboard is still a stub.
+      if (isAuthenticated && isOnAuthRoute) return '/rides';
       return null;
     },
     routes: [

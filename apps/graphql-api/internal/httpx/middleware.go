@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"net/http"
@@ -11,10 +12,39 @@ import (
 	"time"
 
 	"project-neo/graphql-api/internal/metrics"
+	"project-neo/shared/errtrack"
 
+	"github.com/google/uuid"
 	"github.com/rs/cors"
 	"golang.org/x/time/rate"
 )
+
+type ctxKey int
+
+const requestIDKey ctxKey = iota
+
+// RequestID assigns each request a correlation id — honoring an inbound
+// X-Request-ID so callers can stitch traces — exposes it on the response
+// header, and stashes it in the context for logs and error reports.
+func RequestID() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id := strings.TrimSpace(r.Header.Get("X-Request-ID"))
+			if id == "" || len(id) > 128 {
+				id = uuid.NewString()
+			}
+			w.Header().Set("X-Request-ID", id)
+			ctx := context.WithValue(r.Context(), requestIDKey, id)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RequestIDFromCtx returns the correlation id set by RequestID, or "".
+func RequestIDFromCtx(ctx context.Context) string {
+	id, _ := ctx.Value(requestIDKey).(string)
+	return id
+}
 
 // Recover catches panics in downstream handlers, logs the stack, and returns 500.
 func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
@@ -29,6 +59,10 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 						"panic", rv,
 						"stack", string(debug.Stack()),
 					)
+					errtrack.CapturePanic(rv, map[string]string{
+						"path":       r.URL.Path,
+						"request_id": RequestIDFromCtx(r.Context()),
+					})
 					http.Error(w, "internal server error", http.StatusInternalServerError)
 				}
 			}()
@@ -79,6 +113,7 @@ func RequestLog(logger *slog.Logger, skipPrefixes ...string) func(http.Handler) 
 				"bytes", rec.bytes,
 				"duration_ms", time.Since(start).Milliseconds(),
 				"remote", clientIP(r),
+				"request_id", RequestIDFromCtx(r.Context()),
 			)
 		})
 	}
@@ -98,11 +133,21 @@ func BodyLimit(maxBytes int64) func(http.Handler) http.Handler {
 
 // CORS configures cross-origin handling. allowedOrigins supports "*" or a list.
 func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
+	// "*" + credentials is an invalid combination: rs/cors then reflects the
+	// request origin, effectively allowing credentialed requests from anywhere.
+	// Credentials are only enabled for an explicit origin allowlist.
+	allowCredentials := true
+	for _, o := range allowedOrigins {
+		if o == "*" {
+			allowCredentials = false
+			break
+		}
+	}
 	c := cors.New(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodDelete},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
-		AllowCredentials: true,
+		AllowCredentials: allowCredentials,
 		MaxAge:           int((12 * time.Hour).Seconds()),
 	})
 	return c.Handler

@@ -24,27 +24,27 @@ class AppTheme {
       onSurfaceVariant: _onSurfaceVariant,
     ),
     textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-      displayLarge: GoogleFonts.interTight(
+      displayLarge: GoogleFonts.inter(
         fontWeight: FontWeight.bold,
         color: _onSurface,
       ),
-      displayMedium: GoogleFonts.interTight(
+      displayMedium: GoogleFonts.inter(
         fontWeight: FontWeight.bold,
         color: _onSurface,
       ),
-      displaySmall: GoogleFonts.interTight(
+      displaySmall: GoogleFonts.inter(
         fontWeight: FontWeight.bold,
         color: _onSurface,
       ),
-      headlineLarge: GoogleFonts.interTight(
+      headlineLarge: GoogleFonts.inter(
         fontWeight: FontWeight.bold,
         color: _onSurface,
       ),
-      headlineMedium: GoogleFonts.interTight(
+      headlineMedium: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         color: _onSurface,
       ),
-      headlineSmall: GoogleFonts.interTight(
+      headlineSmall: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         color: _onSurface,
       ),

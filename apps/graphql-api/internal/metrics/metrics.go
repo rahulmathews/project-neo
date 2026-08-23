@@ -42,6 +42,32 @@ func New(reg prometheus.Registerer) *HTTP {
 	return h
 }
 
+// Subscriptions holds realtime fan-out collectors.
+type Subscriptions struct {
+	DroppedEvents *prometheus.CounterVec
+	Active        *prometheus.GaugeVec
+}
+
+// NewSubscriptions registers subscription fan-out collectors on the registry.
+func NewSubscriptions(reg prometheus.Registerer) *Subscriptions {
+	s := &Subscriptions{
+		DroppedEvents: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "graphql_api",
+			Subsystem: "subscriptions",
+			Name:      "dropped_events_total",
+			Help:      "Events dropped because a subscriber's buffer was full.",
+		}, []string{"channel"}),
+		Active: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "graphql_api",
+			Subsystem: "subscriptions",
+			Name:      "active_subscribers",
+			Help:      "Active subscription channels by type.",
+		}, []string{"channel"}),
+	}
+	reg.MustRegister(s.DroppedEvents, s.Active)
+	return s
+}
+
 // NewRegistry returns a registry seeded with Go runtime + process collectors.
 func NewRegistry() *prometheus.Registry {
 	reg := prometheus.NewRegistry()

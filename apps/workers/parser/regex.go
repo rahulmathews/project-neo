@@ -98,7 +98,9 @@ func parseDepartureTime(content string, messageTime time.Time, parsed *ParsedRid
 		return
 	}
 
-	base := messageTimeOrNow(messageTime)
+	// Interpret the clock time in the configured group timezone, not the
+	// message timestamp's location (UTC) — see ConfigureTimezone.
+	base := messageTimeOrNow(messageTime).In(parserLoc)
 	dep := time.Date(base.Year(), base.Month(), base.Day(), clock.hour, clock.minute, 0, 0, base.Location())
 	if tomorrowRe.MatchString(content) {
 		dep = dep.AddDate(0, 0, 1)
