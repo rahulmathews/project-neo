@@ -3,7 +3,7 @@ module project-neo/shared
 go 1.25.0
 
 require (
-	github.com/getsentry/sentry-go v0.48.0
+	github.com/getsentry/sentry-go v0.49.0
 	github.com/google/uuid v1.6.0
 	github.com/uptrace/bun v1.2.18
 	github.com/uptrace/bun/dialect/pgdialect v1.2.18
