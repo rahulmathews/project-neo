@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/uptrace/bun v1.2.18
 	go.mau.fi/whatsmeow v0.0.0-20260814123134-0dcf1f50f4b1
-	modernc.org/sqlite v1.56.0
+	modernc.org/sqlite v1.57.0
 )
 
 require (
