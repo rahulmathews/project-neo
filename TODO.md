@@ -1,6 +1,10 @@
 # Project Neo - Development Roadmap
 
-**Last Updated**: May 5, 2026 (session 8)
+**Current delivery checkpoint**: September 5, 2026 — phase 0A, backend readiness.
+
+Use [MVP Implementation Plan](docs/MVP_IMPLEMENTATION_PLAN.md) for the active phases, exit gates, and verified repository/runtime baseline. Complete and review one checkpoint before starting the next. The checklist below is a historical May 2026 inventory; its unchecked items do not reliably describe today's implementation.
+
+There is no seed data in this project. Verify the MVP with real WhatsApp messages and preserve the database and pairing session.
 
 > Progress tracking lives here. Session context (commands, conventions, architecture) is in CLAUDE.md.
 
@@ -72,7 +76,7 @@
 
 ### 📋 Supabase Pending
 - [ ] Configure Auth providers
-- [ ] Add database seed data for development
+- [x] Disable application seeding; data comes from real ingestion
 
 ### ✅ Completed — Shared Go Package (`packages/shared-go`)
 - [x] Create `packages/shared-go` module (`project-neo/shared`)
