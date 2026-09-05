@@ -38,7 +38,7 @@ import (
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
-		os.Exit(runHealthcheck("http://localhost:8082/health"))
+		os.Exit(runHealthcheck("http://127.0.0.1:" + servicePort() + "/health"))
 	}
 
 	logger := logging.New()
@@ -52,10 +52,7 @@ func run(logger *slog.Logger) error {
 	flushErrTrack := errtrack.Init("graphql-api", logger)
 	defer flushErrTrack()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := servicePort()
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		return fmt.Errorf("DATABASE_URL is required")
@@ -106,7 +103,7 @@ func run(logger *slog.Logger) error {
 	defer cancel()
 	health := newRuntimeHealth()
 	go ipostgres.StartListener(ctx, logger, dsn, rideRepo, matchRepo, broker, health.listenerUp, health.listenerDown)
-	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg, health)
+	rootHandler := buildRootHandler(buildResolver(db, broker, rideRepo, matchRepo), verifier, cfg, isProd, logger, httpMetrics, reg, health, db)
 
 	httpSrv := &http.Server{
 		Addr:              ":" + port,
@@ -168,6 +165,7 @@ func buildRootHandler(
 	httpMetrics *metrics.HTTP,
 	reg *prometheus.Registry,
 	health *runtimeHealth,
+	db *bun.DB,
 ) http.Handler {
 	gqlSrv := buildGraphQLServer(resolver, verifier, isProd, logger)
 	mux := http.NewServeMux()
@@ -185,15 +183,23 @@ func buildRootHandler(
 		httpx.RateLimit(cfg.rateLimitRPS, cfg.rateLimitBurst),
 		httpx.BodyLimit(cfg.maxBodyBytes),
 	))
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		up, reason := health.snapshot()
-		body := map[string]string{"status": "ok", "service": "graphql-api", "listener": "ok"}
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		dbErr := db.PingContext(ctx)
+		body := map[string]string{"status": "ok", "service": "graphql-api", "listener": "ok", "database": "ok"}
+		if dbErr != nil || !up {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			body["status"] = "degraded"
+		}
+		if dbErr != nil {
+			body["database"] = "unavailable"
+		}
 		if !up {
 			// A dead pg listener means every GraphQL subscription is silently
 			// frozen — surface it as unhealthy so Docker notices.
-			w.WriteHeader(http.StatusServiceUnavailable)
-			body["status"] = "degraded"
 			body["listener"] = reason
 		}
 		_ = json.NewEncoder(w).Encode(body)
@@ -358,6 +364,13 @@ func loadHTTPConfig() httpConfig {
 		}
 	}
 	return cfg
+}
+
+func servicePort() string {
+	if port := os.Getenv("PORT"); port != "" {
+		return port
+	}
+	return "8082"
 }
 
 func runHealthcheck(url string) int {

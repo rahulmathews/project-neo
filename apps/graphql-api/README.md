@@ -35,7 +35,7 @@ Connects to: Supabase PostgreSQL (`DATABASE_URL`). Reads/writes all tables. List
 |----------|-------------|---------|----------|-------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:postgres@localhost:54322/postgres?sslmode=disable` | Yes | Must include `?sslmode=disable` |
 | `SUPABASE_JWT_SECRET` | JWT secret for auth middleware | `super-secret-jwt-token-with-at-least-32-characters-long` | Yes | Get from `supabase status` |
-| `PORT` | HTTP server bind port | `8082` | No | Defaults to `8080`; set to `8082` in Docker via compose |
+| `PORT` | HTTP server bind and healthcheck port | `8082` | No | Defaults to `8082` for both direct runs and Docker |
 
 ## Running Locally
 
@@ -56,6 +56,13 @@ go build -o bin/graphql-api .
 
 - GraphQL Playground: http://localhost:8082/
 - Health check: `curl http://localhost:8082/health`
+
+`GET /health` is a readiness check: it checks the application's SQL pool with a
+two-second timeout and the PostgreSQL listener state. It returns HTTP 200 with
+`status`, `database`, and `listener` all `ok`, or HTTP 503 with `status: degraded`
+when either dependency is unavailable. The binary's `healthcheck` command uses
+the same `PORT` as the server. GraphQL `{ health }` remains a liveness response;
+it does not establish database readiness or end-to-end message delivery.
 
 To regenerate GraphQL code after schema changes:
 
