@@ -1,6 +1,6 @@
 module project-neo/graphql-api
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/99designs/gqlgen v0.17.94
@@ -11,7 +11,7 @@ require (
 	github.com/rs/cors v1.11.1
 	github.com/uptrace/bun v1.2.18
 	github.com/vektah/gqlparser/v2 v2.5.37
-	golang.org/x/time v0.15.0
+	golang.org/x/time v0.16.0
 )
 
 require (
