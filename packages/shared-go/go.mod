@@ -5,8 +5,8 @@ go 1.25.0
 require (
 	github.com/getsentry/sentry-go v0.49.0
 	github.com/google/uuid v1.6.0
-	github.com/uptrace/bun v1.2.18
-	github.com/uptrace/bun/dialect/pgdialect v1.2.18
+	github.com/uptrace/bun v1.3.0
+	github.com/uptrace/bun/dialect/pgdialect v1.3.0
 	github.com/uptrace/bun/driver/pgdriver v1.2.18
 )
 
