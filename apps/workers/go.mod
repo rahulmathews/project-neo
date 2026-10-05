@@ -8,7 +8,7 @@ require (
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/openai/openai-go v1.12.0
 	github.com/prometheus/client_golang v1.24.1
-	github.com/uptrace/bun v1.2.18
+	github.com/uptrace/bun v1.3.0
 	go.mau.fi/whatsmeow v0.0.0-20260814123134-0dcf1f50f4b1
 	modernc.org/sqlite v1.57.0
 )
