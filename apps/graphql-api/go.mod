@@ -9,7 +9,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
-	github.com/uptrace/bun v1.2.18
+	github.com/uptrace/bun v1.3.0
 	github.com/vektah/gqlparser/v2 v2.5.37
 	golang.org/x/time v0.15.0
 )
